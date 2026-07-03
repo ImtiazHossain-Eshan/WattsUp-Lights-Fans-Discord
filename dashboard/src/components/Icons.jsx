@@ -125,3 +125,29 @@ export function LayoutIcon({ size, className }) {
     </Svg>
   );
 }
+
+export function SunIcon({ size, className }) {
+  return (
+    <Svg size={size} className={className}>
+      <circle cx="12" cy="12" r="4.2" />
+      <path d="M12 2.5v2.5M12 19v2.5M4.4 4.4l1.8 1.8M17.8 17.8l1.8 1.8M2.5 12H5M19 12h2.5M4.4 19.6l1.8-1.8M17.8 6.2l1.8-1.8" />
+    </Svg>
+  );
+}
+
+export function MoonIcon({ size, className }) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z" />
+    </Svg>
+  );
+}
+
+export function RotateIcon({ size, className }) {
+  return (
+    <Svg size={size} className={className}>
+      <path d="M4.2 12a7.8 7.8 0 1 0 2.2-5.4" />
+      <path d="M3.6 4.4v4h4" />
+    </Svg>
+  );
+}

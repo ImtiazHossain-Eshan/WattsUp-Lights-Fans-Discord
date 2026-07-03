@@ -85,22 +85,22 @@ function Sofa({ position = [0, 0, 0], rotationY = 0 }) {
     <group position={position} rotation={[0, rotationY, 0]}>
       <mesh position={[0, 0.24, 0.06]}>
         <boxGeometry args={[1.9, 0.34, 0.8]} />
-        <meshStandardMaterial color="#54617a" roughness={0.85} />
+        <meshStandardMaterial color="#a8443c" roughness={0.85} />
       </mesh>
       <mesh position={[0, 0.55, -0.32]}>
         <boxGeometry args={[1.9, 0.55, 0.18]} />
-        <meshStandardMaterial color="#47536a" roughness={0.85} />
+        <meshStandardMaterial color="#953a33" roughness={0.85} />
       </mesh>
       {[-0.88, 0.88].map((x) => (
         <mesh key={x} position={[x, 0.5, 0.05]}>
           <boxGeometry args={[0.16, 0.44, 0.78]} />
-          <meshStandardMaterial color="#47536a" roughness={0.85} />
+          <meshStandardMaterial color="#953a33" roughness={0.85} />
         </mesh>
       ))}
       {[-0.42, 0.42].map((x) => (
         <mesh key={x} position={[x, 0.45, 0.1]}>
           <boxGeometry args={[0.76, 0.12, 0.62]} />
-          <meshStandardMaterial color="#6b7a94" roughness={0.9} />
+          <meshStandardMaterial color="#c05a4e" roughness={0.9} />
         </mesh>
       ))}
     </group>
@@ -128,7 +128,7 @@ function Rug({ position = [0, 0, 0], size = [2.2, 2.6] }) {
   return (
     <mesh position={[position[0], 0.015, position[2]]}>
       <boxGeometry args={[size[0], 0.03, size[1]]} />
-      <meshStandardMaterial color="#75828e" roughness={0.95} />
+      <meshStandardMaterial color="#9c5f74" roughness={0.95} />
     </mesh>
   );
 }
