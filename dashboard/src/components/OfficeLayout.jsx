@@ -1,24 +1,15 @@
-import { Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import {
-  OrbitControls,
-  OrthographicCamera,
-  ContactShadows,
-  Html,
-  useGLTF,
-} from "@react-three/drei";
+import { OrbitControls, OrthographicCamera, ContactShadows } from "@react-three/drei";
 import Room3D from "./Room3D.jsx";
-import { MODEL_URL, ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
-
-// Warm-load the shared room model so first render never blocks on a fetch.
-useGLTF.preload(MODEL_URL);
+import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
 
 /**
  * The live 3D office. Groups the backend devices by room, looks up each room's
  * config, and renders one generic <Room3D> per room — no hardcoded per-room
- * components. The cluster arrangement (one room back-center, two in front)
- * follows the marked reference structure and lives in roomConfigs.js.
- * Every visual state still comes straight from backend `devices`.
+ * components. The rooms are procedural shells tiled edge-to-edge in a
+ * honeycomb (one back-center, two in front — the marked reference structure);
+ * the arrangement lives in roomConfigs.js. Every visual state still comes
+ * straight from backend `devices`.
  */
 export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceToggle }) {
   const clearTooltip = () => onDeviceHover(null, null);
@@ -34,10 +25,11 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
         style={{ position: "absolute", inset: 0 }}
         onPointerMissed={clearTooltip}
       >
+        {/* steep-ish iso view so interiors stay visible over the front walls */}
         <OrthographicCamera
           makeDefault
-          position={[8.5, 11, 10]}
-          zoom={58}
+          position={[8, 14, 8]}
+          zoom={50}
           near={0.1}
           far={100}
         />
@@ -51,41 +43,33 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
           shadow-mapSize={[1024, 1024]}
         />
 
-        <Suspense
-          fallback={
-            <Html center>
-              <div className="scene3d-loading">Loading office…</div>
-            </Html>
-          }
-        >
-          {ROOM_ORDER.map((name) => (
-            <Room3D
-              key={name}
-              name={name}
-              config={roomConfigs[name]}
-              devices={devices.filter((d) => d.room === name)}
-              busy={busy}
-              onDeviceHover={onDeviceHover}
-              onDeviceToggle={onDeviceToggle}
-            />
-          ))}
-
-          <ContactShadows
-            position={[0, 0.01, 0]}
-            scale={26}
-            blur={2.5}
-            opacity={0.5}
-            far={6}
+        {ROOM_ORDER.map((name) => (
+          <Room3D
+            key={name}
+            name={name}
+            config={roomConfigs[name]}
+            devices={devices.filter((d) => d.room === name)}
+            busy={busy}
+            onDeviceHover={onDeviceHover}
+            onDeviceToggle={onDeviceToggle}
           />
-        </Suspense>
+        ))}
+
+        <ContactShadows
+          position={[0, -0.17, 0]}
+          scale={30}
+          blur={2.5}
+          opacity={0.45}
+          far={6}
+        />
 
         <OrbitControls
           makeDefault
-          target={[0, 0.9, -0.2]}
+          target={[-0.8, 0.5, -0.8]}
           enablePan={false}
           minPolarAngle={0.15}
-          maxPolarAngle={Math.PI / 2.15}
-          minZoom={30}
+          maxPolarAngle={Math.PI / 2.4}
+          minZoom={28}
           maxZoom={110}
         />
       </Canvas>
