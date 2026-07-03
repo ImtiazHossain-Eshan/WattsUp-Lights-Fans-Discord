@@ -1,16 +1,12 @@
 import { AlertTriangleIcon, AlertOctagonIcon, CheckCircleIcon } from "./Icons.jsx";
-
-function relTime(iso) {
-  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
-}
+import { useOfficeNow, relOfficeTime } from "../officeClock.js";
 
 const SEVERITY_ICON = { warning: AlertTriangleIcon, critical: AlertOctagonIcon };
 
-/** Active alerts (after-hours devices, long-running rooms) with severity styling. */
+/** Active alerts (after-hours devices, long-running rooms) with severity styling.
+ *  Ages are measured on the OFFICE clock, consistent with every other panel. */
 export default function AlertsPanel({ alerts }) {
+  const nowMs = useOfficeNow(1000);
   const sorted = [...alerts].sort(
     (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
   );
@@ -40,7 +36,7 @@ export default function AlertsPanel({ alerts }) {
                   <p>{alert.message}</p>
                   <small>
                     <span className="alert-room">{alert.room}</span> ·{" "}
-                    {relTime(alert.timestamp)}
+                    {relOfficeTime(alert.timestamp, nowMs)}
                   </small>
                 </div>
               </li>

@@ -1,13 +1,10 @@
 import DeviceIcon from "./DeviceIcon.jsx";
+import { formatOfficeTime, relOfficeTime } from "../officeClock.js";
 
+// Office-clock timestamp: absolute + relative, consistent with every panel.
 function formatTime(iso) {
   if (!iso) return "—";
-  const date = new Date(iso);
-  const diffMs = Date.now() - date.getTime();
-  const mins = Math.floor(diffMs / 60000);
-  const rel =
-    mins < 1 ? "just now" : mins < 60 ? `${mins}m ago` : `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
-  return `${date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })} · ${rel}`;
+  return `${formatOfficeTime(iso)} · ${relOfficeTime(iso)}`;
 }
 
 /**
