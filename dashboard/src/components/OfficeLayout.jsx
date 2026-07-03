@@ -29,7 +29,7 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
         <OrthographicCamera
           makeDefault
           position={[8, 14, 8]}
-          zoom={46}
+          zoom={52}
           near={0.1}
           far={100}
         />

@@ -1,4 +1,5 @@
 import DeviceControls from "./DeviceControls.jsx";
+import { useOfficeNow } from "../officeClock.js";
 
 const TYPE_LABELS = { waiting_area: "Waiting area", workspace: "Workspace" };
 
@@ -20,6 +21,8 @@ export default function RoomCard({
   onRoomOff,
 }) {
   const alertCount = alerts.length;
+  // Office-clock "now", ticking once a second — device ages follow virtual time.
+  const nowMs = useOfficeNow(1000);
 
   return (
     <div className="panel room-card" style={{ "--room-accent": roomConfig.accentColor }}>
@@ -58,6 +61,7 @@ export default function RoomCard({
             key={d.id}
             device={d}
             busy={busy}
+            nowMs={nowMs}
             onToggle={onToggle}
             onSetMode={onSetMode}
           />

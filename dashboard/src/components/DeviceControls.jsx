@@ -1,14 +1,5 @@
 import DeviceIcon from "./DeviceIcon.jsx";
-import ToggleSwitch from "./ToggleSwitch.jsx";
-
-function shortTime(iso) {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
+import { formatOfficeTime, relOfficeTime } from "../officeClock.js";
 
 /** Auto/Manual segmented control — doubles as the mode badge (active = current mode). */
 function ModeToggle({ mode, busy, onSetMode }) {
@@ -37,43 +28,80 @@ function ModeToggle({ mode, busy, onSetMode }) {
 }
 
 /**
- * One device's live row: SVG icon (spinning fan / glowing bulb), ON/OFF badge,
- * power, ON/OFF switch and Auto/Manual mode control. Every action calls the
- * backend first (handlers passed down from App.jsx); the row re-renders when
- * the backend broadcasts the new state.
+ * Physical-style rocker wall switch: a plate with screws and a tilting rocker
+ * key (I = on, O = off) plus a status LED. Pressing it toggles the device via
+ * the backend — the tilt/glow only ever renders the broadcast state.
  */
-export default function DeviceControls({ device, busy, onToggle, onSetMode }) {
+function RockerSwitch({ on, type, busy, label, onToggle }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      aria-label={label}
+      className={`rocker rocker--${type} ${on ? "is-on" : ""}`}
+      disabled={busy}
+      onClick={onToggle}
+    >
+      <span className="rocker-led" aria-hidden="true" />
+      <span className="rocker-well" aria-hidden="true">
+        <span className="rocker-key">
+          <span className="rocker-mark rocker-mark--i">I</span>
+          <span className="rocker-mark rocker-mark--o">O</span>
+        </span>
+      </span>
+      <span className="rocker-screw rocker-screw--t" aria-hidden="true" />
+      <span className="rocker-screw rocker-screw--b" aria-hidden="true" />
+    </button>
+  );
+}
+
+/**
+ * One device's live row: SVG icon (spinning fan / glowing bulb), power, the
+ * office-clock timestamp of its last change, Auto/Manual mode control, and a
+ * physical rocker switch. Every action calls the backend first (handlers from
+ * App.jsx); the row re-renders when the backend broadcasts the new state.
+ * `nowMs` is the ticking OFFICE time (passed by RoomCard) so relative ages
+ * follow the virtual clock, not the wall clock.
+ */
+export default function DeviceControls({ device, busy, nowMs, onToggle, onSetMode }) {
   const on = device.status === "on";
   return (
-    <li className={`device-card ${on ? "is-on" : "is-off"} mode-${device.controlMode}`}>
-      <div className="device-card-head">
-        <DeviceIcon type={device.type} on={on} />
-        <span className="device-card-name">{device.name}</span>
-        <span className={`badge ${on ? "badge--on" : "badge--off"}`}>
-          {on ? "ON" : "OFF"}
-        </span>
-      </div>
+    <li
+      className={`device-card device-card--${device.type} ${on ? "is-on" : "is-off"} mode-${device.controlMode}`}
+    >
+      <div className="device-card-main">
+        <div className="device-card-head">
+          <DeviceIcon type={device.type} on={on} />
+          <span className="device-card-name">{device.name}</span>
+          <span className="device-card-power">{device.currentPower} W</span>
+        </div>
 
-      <div className="device-card-meta">
-        <span className="device-card-power">{device.currentPower} W</span>
-        <span className="device-card-time" title="Last changed">
-          {shortTime(device.lastChanged)}
-        </span>
-      </div>
+        <div className="device-card-meta">
+          <span
+            className="device-card-time"
+            title={`Last changed at ${formatOfficeTime(device.lastChanged)} (office time)`}
+          >
+            {on && device.turnedOnAt
+              ? `on since ${formatOfficeTime(device.turnedOnAt, { seconds: false })}`
+              : `changed ${relOfficeTime(device.lastChanged, nowMs)}`}
+          </span>
+        </div>
 
-      <div className="device-card-controls">
-        <ToggleSwitch
-          checked={on}
-          busy={busy}
-          label={on ? "On" : "Off"}
-          onChange={() => onToggle(device.id)}
-        />
         <ModeToggle
           mode={device.controlMode}
           busy={busy}
           onSetMode={(mode) => onSetMode(device.id, mode)}
         />
       </div>
+
+      <RockerSwitch
+        on={on}
+        type={device.type}
+        busy={busy}
+        label={`Turn ${device.name} ${on ? "off" : "on"}`}
+        onToggle={() => onToggle(device.id)}
+      />
     </li>
   );
 }

@@ -1,19 +1,22 @@
 import { useCallback, useState } from "react";
 import HeaderSummary from "./HeaderSummary.jsx";
 import ControlBar from "./ControlBar.jsx";
+import TimeControl from "./TimeControl.jsx";
 import OfficeLayout from "./OfficeLayout.jsx";
 import RoomCard from "./RoomCard.jsx";
 import PowerMeter from "./PowerMeter.jsx";
 import AlertsPanel from "./AlertsPanel.jsx";
 import BotCommandGuide from "./BotCommandGuide.jsx";
 import DeviceTooltip from "./DeviceTooltip.jsx";
-import { AlertTriangleIcon, LayoutIcon } from "./Icons.jsx";
+import { AlertTriangleIcon } from "./Icons.jsx";
 import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
 
 /**
- * Page frame. Layout (top → bottom): header stats · banners · office scene +
- * alerts · per-room device control cards · power breakdown / simulation
- * controls / bot guide. All data & actions flow through props from App.jsx.
+ * Page frame. Layout (top → bottom): header stats · banners · the office scene
+ * as a full-width open stage (no panel box — it floats on the page background)
+ * · the office clock bar · per-room device control cards · power breakdown /
+ * alerts / simulation controls · bot guide. All data & actions flow through
+ * props from App.jsx.
  */
 export default function DashboardShell({
   devices,
@@ -21,6 +24,7 @@ export default function DashboardShell({
   usage,
   alerts,
   simulation,
+  clock,
   connected,
   loading,
   error,
@@ -74,28 +78,22 @@ export default function DashboardShell({
         </div>
       )}
 
-      <main className="layout">
-        <section className="scene-column">
-          <div className="scene-head">
-            <h2>
-              <LayoutIcon size={15} /> Office layout
-            </h2>
-            <span className="scene-hint">
-              drag to orbit · click a device to toggle · hover for details
-            </span>
-          </div>
-          <OfficeLayout
-            devices={devices}
-            busy={busy}
-            onDeviceHover={handleDeviceHover}
-            onDeviceToggle={actions.toggleDevice}
-          />
-        </section>
+      <section className="scene-stage" aria-label="Live 3D office">
+        <OfficeLayout
+          devices={devices}
+          busy={busy}
+          onDeviceHover={handleDeviceHover}
+          onDeviceToggle={actions.toggleDevice}
+        />
+      </section>
 
-        <aside className="side-column">
-          <AlertsPanel alerts={alerts} />
-        </aside>
-      </main>
+      <TimeControl
+        clock={clock}
+        busy={busy}
+        onSetTime={actions.setClockTime}
+        onSetSpeed={actions.setClockSpeed}
+        onReset={actions.resetClock}
+      />
 
       <section className="room-cards-grid">
         {ROOM_ORDER.map((name) => (
@@ -116,6 +114,7 @@ export default function DashboardShell({
 
       <section className="bottom-grid">
         <PowerMeter usage={usage} />
+        <AlertsPanel alerts={alerts} />
         <ControlBar
           simulation={simulation}
           busy={busy}
@@ -123,8 +122,9 @@ export default function DashboardShell({
           onResetAuto={actions.resetAllToAuto}
           onAllOff={actions.turnAllOff}
         />
-        <BotCommandGuide />
       </section>
+
+      <BotCommandGuide />
 
       <footer className="footer">
         <span>

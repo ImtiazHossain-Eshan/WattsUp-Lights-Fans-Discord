@@ -315,55 +315,30 @@ body {
   flex-shrink: 0;
 }
 
-/* ---------- office scene ---------- */
-.scene-column {
-  display: flex;
-  flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px 16px 14px;
-  box-shadow: var(--shadow-card);
-}
-
-.scene-head {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-.scene-head h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-2);
-}
-
-.scene-head h2 svg {
-  color: var(--muted);
-}
-
-.scene-hint {
-  margin-left: auto;
-  font-size: 11px;
-  color: var(--muted);
+/* ---------- office scene — open stage (no panel box) ----------
+   The diorama floats directly on the page background with a warm glow pooled
+   behind it, full-bleed across the shell — no border, no recessed card. */
+.scene-stage {
+  position: relative;
 }
 
 .scene-wrap {
   position: relative;
-  flex: 1;
-  min-height: 540px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: #0b0e12; /* recessed stage for the 3D view */
-  overflow: hidden;
+  min-height: 660px;
 }
 
 .scene-backdrop {
-  display: none; /* flat professional stage — no decorative glow */
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  width: min(980px, 94%);
+  height: 470px;
+  transform: translate(-50%, -50%);
+  background:
+    radial-gradient(closest-side, rgba(255, 158, 94, 0.13), transparent 70%),
+    radial-gradient(closest-side, rgba(147, 84, 148, 0.22), transparent 78%);
+  filter: blur(36px);
+  pointer-events: none;
 }
 
 .scene-caption {
@@ -808,13 +783,21 @@ body {
 /* ---------- device cards ---------- */
 .device-card {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: stretch;
+  gap: 12px;
   padding: 10px 12px;
   background: var(--surface-2);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.device-card-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
 }
 
 .device-card.is-on {
@@ -855,7 +838,10 @@ body {
 }
 
 .device-card-power {
+  margin-left: auto;
   font-weight: 650;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
   color: var(--muted);
 }
 

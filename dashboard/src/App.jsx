@@ -6,15 +6,18 @@ import {
   fetchUsage,
   fetchAlerts,
   fetchSimulation,
+  fetchClock,
   toggleDevice,
   setDeviceMode,
   setSimulation,
+  setClock,
   resetAllToAuto,
   turnAllOff,
   turnRoomOff,
   BACKEND_URL,
 } from "./api";
 import { socket } from "./socket";
+import { syncOfficeClock } from "./officeClock";
 
 export default function App() {
   const [devices, setDevices] = useState([]);
@@ -22,6 +25,7 @@ export default function App() {
   const [usage, setUsage] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [simulation, setSimulationState] = useState(null);
+  const [clock, setClockState] = useState(null);
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,12 +41,13 @@ export default function App() {
     // Initial snapshot over REST; afterwards Socket.IO keeps everything live.
     async function loadInitial() {
       try {
-        const [d, r, u, a, s] = await Promise.all([
+        const [d, r, u, a, s, c] = await Promise.all([
           fetchDevices(),
           fetchRooms(),
           fetchUsage(),
           fetchAlerts(),
           fetchSimulation(),
+          fetchClock(),
         ]);
         if (disposed) return;
         setDevices(d);
@@ -50,6 +55,8 @@ export default function App() {
         setUsage(u);
         setAlerts(a);
         setSimulationState(s);
+        syncOfficeClock(c);
+        setClockState(c);
         setError(null);
       } catch {
         if (!disposed) {
@@ -67,6 +74,10 @@ export default function App() {
       setError(null);
       loadInitial(); // refresh in case updates were missed while offline
     };
+    const onClock = (state) => {
+      syncOfficeClock(state); // keep the local ticking clock in step first
+      setClockState(state);
+    };
     const onDisconnect = () => setConnected(false);
     const onConnectError = () => setConnected(false);
 
@@ -78,6 +89,7 @@ export default function App() {
     socket.on("usage:update", setUsage);
     socket.on("alerts:update", setAlerts);
     socket.on("simulation:update", setSimulationState);
+    socket.on("clock:update", onClock);
 
     socket.connect();
     loadInitial();
@@ -92,6 +104,7 @@ export default function App() {
       socket.off("usage:update", setUsage);
       socket.off("alerts:update", setAlerts);
       socket.off("simulation:update", setSimulationState);
+      socket.off("clock:update", onClock);
       socket.disconnect();
     };
   }, []);
@@ -129,6 +142,12 @@ export default function App() {
     turnAllOff: () => runAction(() => turnAllOff(), "Couldn't turn all devices off"),
     turnRoomOff: (roomName) =>
       runAction(() => turnRoomOff(roomName), `Couldn't turn off ${roomName}`),
+    setClockTime: (time) =>
+      runAction(() => setClock({ time }), "Couldn't set the office time"),
+    setClockSpeed: (speed) =>
+      runAction(() => setClock({ speed }), "Couldn't change the clock speed"),
+    resetClock: () =>
+      runAction(() => setClock({ reset: true }), "Couldn't reset the office clock"),
   };
 
   return (
@@ -138,6 +157,7 @@ export default function App() {
       usage={usage}
       alerts={alerts}
       simulation={simulation}
+      clock={clock}
       connected={connected}
       loading={loading}
       error={error}
