@@ -1,9 +1,15 @@
 import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { useGLTF, Html } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import RoomFurniture from "./RoomFurniture.jsx";
-import { MODEL_URL, ROOM_FOOTPRINT, FAN_NAMES, LIGHT_NAMES } from "./roomConfigs.js";
+import {
+  ROOM_SIZE,
+  WALL_HEIGHT,
+  WALL_THICKNESS,
+  FAN_NAMES,
+  LIGHT_NAMES,
+} from "./roomConfigs.js";
 
 // Shared across all devices: remembers where a press started so we can tell a
 // click (toggle the device) from a drag (orbit the camera). Module-level is fine
@@ -49,9 +55,8 @@ function deviceHandlers(device, { onDeviceHover, onDeviceToggle, busy }) {
   };
 }
 
-// Devices are drawn slightly larger than life so they read clearly on top of
-// the busy low-poly rooms.
-const DEVICE_SCALE = 1.3;
+// Devices are drawn slightly larger than life so they read clearly.
+const DEVICE_SCALE = 1.15;
 
 /** Ceiling fan — blades spin while the device is ON, still when OFF. */
 function Fan3D({ device, position, handlers }) {
@@ -139,13 +144,104 @@ function Light3D({ device, position, handlers }) {
   );
 }
 
+const HALF = ROOM_SIZE / 2;
+const T = WALL_THICKNESS;
+
+/**
+ * Procedural room shell in the low-poly isometric style: floor slab + two
+ * walls on the -X/-Z edges (so the camera looks into the open corner), white
+ * trim caps, a door on the -X wall and an optional night window. Two wall
+ * tones per room (like the reference render) come from the config palette.
+ */
+function RoomShell({ palette, window: win }) {
+  return (
+    <group>
+      {/* floor slab (top at y=0) */}
+      <mesh position={[0, -0.08, 0]} receiveShadow>
+        <boxGeometry args={[ROOM_SIZE, 0.16, ROOM_SIZE]} />
+        <meshStandardMaterial color={palette.floor} roughness={0.85} />
+      </mesh>
+
+      {/* back wall (-Z) + trim cap */}
+      <mesh position={[0, WALL_HEIGHT / 2, -HALF + T / 2]} receiveShadow>
+        <boxGeometry args={[ROOM_SIZE, WALL_HEIGHT, T]} />
+        <meshStandardMaterial color={palette.wall} roughness={0.9} />
+      </mesh>
+      <mesh position={[0, WALL_HEIGHT + 0.035, -HALF + T / 2]}>
+        <boxGeometry args={[ROOM_SIZE + 0.04, 0.07, T + 0.06]} />
+        <meshStandardMaterial color={palette.trim} roughness={0.6} />
+      </mesh>
+
+      {/* side wall (-X) + trim cap */}
+      <mesh position={[-HALF + T / 2, WALL_HEIGHT / 2, 0]} receiveShadow>
+        <boxGeometry args={[T, WALL_HEIGHT, ROOM_SIZE]} />
+        <meshStandardMaterial color={palette.wallSide} roughness={0.9} />
+      </mesh>
+      <mesh position={[-HALF + T / 2, WALL_HEIGHT + 0.035, 0]}>
+        <boxGeometry args={[T + 0.06, 0.07, ROOM_SIZE + 0.04]} />
+        <meshStandardMaterial color={palette.trim} roughness={0.6} />
+      </mesh>
+
+      {/* door on the -X wall (offices have doors) */}
+      <group position={[-HALF + T + 0.015, 0, 1.7]}>
+        <mesh position={[0, 0.85, 0]}>
+          <boxGeometry args={[0.03, 1.7, 0.92]} />
+          <meshStandardMaterial color={palette.trim} roughness={0.6} />
+        </mesh>
+        <mesh position={[0.012, 0.82, 0]}>
+          <boxGeometry args={[0.03, 1.56, 0.78]} />
+          <meshStandardMaterial color="#8a5a3e" roughness={0.7} />
+        </mesh>
+        <mesh position={[0.035, 0.85, 0.28]}>
+          <sphereGeometry args={[0.035, 10, 8]} />
+          <meshStandardMaterial color="#e0c088" metalness={0.5} roughness={0.4} />
+        </mesh>
+      </group>
+
+      {/* optional night window (config-placed on either wall) */}
+      {win && (
+        <group
+          position={
+            win.wall === "x"
+              ? [-HALF + T + 0.015, 1.45, win.offset]
+              : [win.offset, 1.45, -HALF + T + 0.015]
+          }
+          rotation={[0, win.wall === "x" ? Math.PI / 2 : 0, 0]}
+        >
+          <mesh>
+            <boxGeometry args={[1.25, 0.9, 0.05]} />
+            <meshStandardMaterial color={palette.trim} roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 0, 0.01]}>
+            <boxGeometry args={[1.11, 0.76, 0.05]} />
+            <meshStandardMaterial
+              color="#2b3a5e"
+              emissive="#3a5a8e"
+              emissiveIntensity={0.25}
+              roughness={0.3}
+            />
+          </mesh>
+          {/* cross mullions */}
+          <mesh position={[0, 0, 0.032]}>
+            <boxGeometry args={[0.05, 0.76, 0.01]} />
+            <meshStandardMaterial color={palette.trim} roughness={0.6} />
+          </mesh>
+          <mesh position={[0, 0, 0.032]}>
+            <boxGeometry args={[1.11, 0.05, 0.01]} />
+            <meshStandardMaterial color={palette.trim} roughness={0.6} />
+          </mesh>
+        </group>
+      )}
+    </group>
+  );
+}
+
 /**
  * One room, fully driven by its roomConfig:
- *  - extracts the config's named room group from the shared low-poly GLB
- *    (pruning `hiddenNodes`), normalized to ROOM_FOOTPRINT with floor at y=0
- *  - adds the config's procedural furniture extras (RoomFurniture)
- *  - draws the five live devices at the config's ceiling layout
- *  - billboard label with name, purpose subtitle and live wattage
+ *  - a procedural office shell (walls/floor in the room's palette)
+ *  - the config's furniture set (RoomFurniture, by layoutStyle)
+ *  - the five live devices at the config's ceiling layout
+ *  - a compact wall-corner sign with name + live wattage
  */
 export default function Room3D({
   name,
@@ -155,40 +251,7 @@ export default function Room3D({
   onDeviceHover,
   onDeviceToggle,
 }) {
-  const { scene } = useGLTF(MODEL_URL);
   const sceneCfg = config.scene;
-
-  // Extract + prep this room's sub-scene once. We bake the source node's world
-  // matrix into the clone so it keeps the exact orientation it has inside the
-  // GLB (Sketchfab wraps models in rotated/scaled ancestor nodes).
-  const roomObject = useMemo(() => {
-    scene.updateMatrixWorld(true);
-    const src = scene.getObjectByName(sceneCfg.modelNode);
-    if (!src) return null;
-
-    const cloned = src.clone(true);
-    cloned.matrix.copy(src.matrixWorld);
-    cloned.matrix.decompose(cloned.position, cloned.quaternion, cloned.scale);
-
-    for (const nodeName of sceneCfg.hiddenNodes || []) {
-      const n = cloned.getObjectByName(nodeName);
-      if (n) n.removeFromParent(); // removed (not just hidden) so it can't skew the fit box
-    }
-    return cloned;
-  }, [scene, sceneCfg]);
-
-  // Fit transform: scale to the common footprint, recenter X/Z, floor at y=0.
-  const fit = useMemo(() => {
-    if (!roomObject) return { scale: 1, offset: [0, 0, 0] };
-    const box = new THREE.Box3().setFromObject(roomObject);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    const scale = ROOM_FOOTPRINT / Math.max(size.x, size.z);
-    return {
-      scale,
-      offset: [-center.x * scale, -box.min.y * scale, -center.z * scale],
-    };
-  }, [roomObject]);
 
   // One factory shared by every device in this room; `handlers(device)` binds it.
   const handlers = (device) =>
@@ -203,28 +266,25 @@ export default function Room3D({
 
   return (
     <group position={sceneCfg.position}>
-      <group rotation={[0, sceneCfg.rotationY || 0, 0]}>
-        {roomObject && (
-          <group position={fit.offset} scale={fit.scale}>
-            <primitive object={roomObject} />
-          </group>
-        )}
+      <RoomShell palette={sceneCfg.palette} window={sceneCfg.window} />
+      <RoomFurniture layoutStyle={config.layoutStyle} />
 
-        <RoomFurniture layoutStyle={config.layoutStyle} />
+      {FAN_NAMES.map((n) => (
+        <Fan3D key={n} device={byName[n]} position={layout[n]} handlers={handlers} />
+      ))}
+      {LIGHT_NAMES.map((n) => (
+        <Light3D key={n} device={byName[n]} position={layout[n]} handlers={handlers} />
+      ))}
 
-        {FAN_NAMES.map((n) => (
-          <Fan3D key={n} device={byName[n]} position={layout[n]} handlers={handlers} />
-        ))}
-        {LIGHT_NAMES.map((n) => (
-          <Light3D key={n} device={byName[n]} position={layout[n]} handlers={handlers} />
-        ))}
-      </group>
-
-      <Html position={[0, sceneCfg.labelHeight, 0]} center zIndexRange={[20, 0]}>
-        <div className="room3d-label" style={{ borderColor: `${config.accentColor}55` }}>
-          <span className="room3d-label-name">{name}</span>
-          <span className="room3d-label-sub">{config.subtitle}</span>
-          <span className="room3d-label-power">{roomPower} W</span>
+      {/* compact sign perched on the back wall — name + live wattage */}
+      <Html position={[0, WALL_HEIGHT + 0.42, -HALF + 0.2]} center zIndexRange={[20, 0]}>
+        <div
+          className={`room3d-sign ${roomPower > 0 ? "is-live" : ""}`}
+          style={{ "--accent": config.accentColor }}
+        >
+          <span className="room3d-sign-dot" aria-hidden="true" />
+          <strong className="room3d-sign-name">{name}</strong>
+          <span className="room3d-sign-power">{roomPower} W</span>
         </div>
       </Html>
     </group>

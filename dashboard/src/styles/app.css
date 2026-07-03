@@ -299,7 +299,7 @@ body {
 .scene-wrap {
   position: relative;
   flex: 1;
-  min-height: 520px;
+  min-height: 580px;
 }
 
 .scene-backdrop {
@@ -1348,6 +1348,56 @@ body {
   color: var(--muted);
   font-size: 12.5px;
   white-space: nowrap;
+}
+
+/* Compact room sign perched on each back wall: accent dot · name · watts.
+   Replaces the old multi-line floating bubbles. */
+.room3d-sign {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 8px;
+  background: rgba(18, 7, 16, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-left: 3px solid var(--accent, var(--amber));
+  box-shadow: 0 4px 14px rgba(8, 2, 12, 0.45);
+  backdrop-filter: blur(3px);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.room3d-sign-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  flex: none;
+}
+
+.room3d-sign.is-live .room3d-sign-dot {
+  background: var(--accent, var(--amber));
+  box-shadow: 0 0 8px var(--accent, var(--amber));
+}
+
+.room3d-sign-name {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #f7ecdf;
+}
+
+.room3d-sign-power {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--accent, #ffb877);
+  opacity: 0.95;
+}
+
+.room3d-sign:not(.is-live) .room3d-sign-power {
+  color: var(--muted);
 }
 
 /* ============================================================

@@ -2,56 +2,64 @@
  * Room configuration system — the one place that makes the three rooms
  * DIFFERENT while the device structure stays identical (2 fans + 3 lights).
  *
- * Every room-specific thing lives here: purpose, labels, accent, expected
- * usage, which furnished room of the low-poly GLB backs it, extra procedural
- * furniture, and where its five devices hang. OfficeLayout/Room3D/RoomCard
- * are fully generic — they just render whatever this config says.
+ * The rooms are built procedurally (RoomShell in Room3D + RoomFurniture):
+ * colored two-wall shells in the low-poly isometric style, tiled edge-to-edge
+ * like a honeycomb — one room back-center straddling the seam of the two rooms
+ * in front (the marked reference structure). No GLB dependency: we control the
+ * office look, the footprint and the palette entirely from this file.
  *
- * The GLB (public/models/low_poly_isometric_rooms.glb) contains 7 furnished
- * rooms as named groups (Room1..Room7). We borrow three purpose-matched ones:
- *   Room3 → sofa + coffee table + TV + plant  → Drawing Room (lounge)
- *   Room1 → PC setup + desk + shelves         → Work Room 1  (workspace)
- *   Room2 → desks + bookshelf + boards        → Work Room 2  (workspace, alt)
- * `hiddenNodes` prunes pieces that don't fit an office (Room1's bed).
+ * Every room-specific thing lives here: purpose, labels, accent, expected
+ * usage, wall/floor palette, furniture layout style, and where its five
+ * devices hang. OfficeLayout/Room3D/RoomCard are fully generic — they just
+ * render whatever this config says.
  */
-
-export const MODEL_URL = "/models/low_poly_isometric_rooms.glb";
 
 export const ROOM_ORDER = ["Drawing Room", "Work Room 1", "Work Room 2"];
 
-export const ROOM_FOOTPRINT = 3.4; // every extracted room is scaled to this width/depth
+export const ROOM_SIZE = 4.6; // floor width/depth of every room (world units)
+export const WALL_HEIGHT = 2.2; // low walls so interiors read from the iso camera
+export const WALL_THICKNESS = 0.14;
+
 export const FAN_NAMES = ["Fan 1", "Fan 2"];
 export const LIGHT_NAMES = ["Light 1", "Light 2", "Light 3"];
 
-// Cluster arrangement (matches the marked reference structure): one room at the
-// back-center, two rooms side by side in front — not three in a row.
-const BACK_CENTER = [0, 0, -2.45];
-const FRONT_LEFT = [-1.92, 0, 1.45];
-const FRONT_RIGHT = [1.92, 0, 1.45];
+// Honeycomb tiling — every room has walls on its -X and -Z edges. The back
+// room sits at the grid origin; the two front rooms are its +Z and +X grid
+// neighbors, which the iso camera (looking down the +X/+Z diagonal) renders
+// as one room top-center with two rooms flanking it below — the marked
+// reference structure. Front rooms share edges with the back room and meet
+// each other at a corner, exactly like the reference render.
+const HALF = ROOM_SIZE / 2;
+const BACK_CENTER = [-HALF, 0, -HALF];
+const FRONT_LEFT = [-HALF, 0, HALF]; // +Z neighbor → screen down-left
+const FRONT_RIGHT = [HALF, 0, -HALF]; // +X neighbor → screen down-right
 
 export const roomConfigs = {
   "Drawing Room": {
     type: "waiting_area",
     label: "Drawing Room",
     subtitle: "Waiting / lounge area",
-    furniture: ["sofa", "center table", "TV dresser", "plant", "wall frames", "rug"],
+    furniture: ["sofa", "coffee table", "rug", "plants", "wall frames"],
     layoutStyle: "lounge",
     expectedUsage: "low",
-    accentColor: "#9ccf9a", // green/slate
+    accentColor: "#f0a860", // warm amber — matches its walls
     description: "Used occasionally by visitors or employees waiting.",
     scene: {
-      modelNode: "Room3",
-      hiddenNodes: [],
-      rotationY: Math.PI / 2,
       position: BACK_CENTER,
-      labelHeight: 3.0,
-      // Ceiling devices arranged around the lounge seating area.
+      palette: {
+        wall: "#d09455",
+        wallSide: "#b57c41",
+        floor: "#c99a63",
+        trim: "#f5eee2",
+      },
+      window: { wall: "z", offset: 1.35 }, // night window on the outer back wall
+      // Ceiling devices spread over the seating area.
       deviceLayout: {
-        "Fan 1": [-0.95, 2.45, -0.3],
-        "Fan 2": [0.95, 2.45, 0.45],
-        "Light 1": [-0.55, 1.85, -1.0],
-        "Light 2": [0.1, 2.0, 0.1],
-        "Light 3": [1.15, 1.85, -0.85],
+        "Fan 1": [1.05, 1.82, -0.95],
+        "Fan 2": [-0.9, 1.82, 1.0],
+        "Light 1": [-0.95, 1.62, -0.95],
+        "Light 2": [0.15, 1.7, 0.15],
+        "Light 3": [1.15, 1.62, 1.15],
       },
     },
   },
@@ -60,24 +68,27 @@ export const roomConfigs = {
     type: "workspace",
     label: "Work Room 1",
     subtitle: "Employee work area",
-    furniture: ["desk", "chair", "PC setup", "wall shelves", "books", "whiteboard"],
+    furniture: ["desks", "chairs", "monitors", "whiteboard", "plant"],
     layoutStyle: "office-workspace",
     expectedUsage: "high",
-    accentColor: "#8fb8ff", // blue/slate
+    accentColor: "#ef8296", // crimson — matches its walls
     description: "Primary work area for employees.",
     scene: {
-      modelNode: "Room1",
-      hiddenNodes: ["Bed"], // it's an office, not a bedroom
-      rotationY: Math.PI / 2,
       position: FRONT_LEFT,
-      labelHeight: 3.0,
-      // Lights over the desk wall, fans spread across the room.
+      palette: {
+        wall: "#b04d5e",
+        wallSide: "#933c4c",
+        floor: "#aa7a4f",
+        trim: "#f5eee2",
+      },
+      window: { wall: "x", offset: -1.2 }, // night window on the outer side wall
+      // Lights over the desk row along the back wall, fans across the room.
       deviceLayout: {
-        "Fan 1": [-0.5, 2.45, -0.5],
-        "Fan 2": [0.8, 2.45, 0.6],
-        "Light 1": [-1.0, 1.85, -0.6],
-        "Light 2": [-1.0, 1.85, 0.55],
-        "Light 3": [0.8, 1.9, -0.6],
+        "Fan 1": [-0.45, 1.82, 0.95],
+        "Fan 2": [1.15, 1.82, -0.55],
+        "Light 1": [-1.05, 1.62, -1.0],
+        "Light 2": [0.35, 1.62, -1.0],
+        "Light 3": [0.35, 1.7, 0.95],
       },
     },
   },
@@ -86,24 +97,27 @@ export const roomConfigs = {
     type: "workspace",
     label: "Work Room 2",
     subtitle: "Employee work area",
-    furniture: ["desks", "chairs", "monitor", "bookshelf", "notice boards", "filing cabinet"],
+    furniture: ["desks", "chairs", "bookshelf", "notice board", "filing cabinet"],
     layoutStyle: "office-workspace-alt",
     expectedUsage: "high",
-    accentColor: "#6fd6c3", // teal/slate
-    description: "Second employee work area.",
+    accentColor: "#c893e0", // violet — matches its walls
+    description: "Second employee work area, different arrangement.",
     scene: {
-      modelNode: "Room2",
-      hiddenNodes: [],
-      rotationY: Math.PI / 2,
       position: FRONT_RIGHT,
-      labelHeight: 3.0,
-      // Different ceiling arrangement from Work Room 1: a lighting row.
+      palette: {
+        wall: "#8a4f9e",
+        wallSide: "#703e82",
+        floor: "#7c5a86",
+        trim: "#f5eee2",
+      },
+      // no window — its back wall carries the bookshelf + notice board
+      // L-shaped desk arrangement → lights follow the two desk walls.
       deviceLayout: {
-        "Fan 1": [-0.9, 2.45, 0.75],
-        "Fan 2": [0.9, 2.45, -0.75],
-        "Light 1": [-0.95, 1.85, -0.35],
-        "Light 2": [0.0, 2.0, 0.05],
-        "Light 3": [0.95, 1.85, 0.45],
+        "Fan 1": [1.0, 1.82, 0.95],
+        "Fan 2": [-0.85, 1.82, -0.2],
+        "Light 1": [-0.2, 1.62, -1.05],
+        "Light 2": [-1.05, 1.62, 0.75],
+        "Light 3": [1.05, 1.7, -0.1],
       },
     },
   },
