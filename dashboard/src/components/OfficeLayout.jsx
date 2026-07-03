@@ -1,5 +1,10 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, OrthographicCamera, ContactShadows } from "@react-three/drei";
+import {
+  OrbitControls,
+  OrthographicCamera,
+  ContactShadows,
+  Center,
+} from "@react-three/drei";
 import Room3D from "./Room3D.jsx";
 import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
 
@@ -29,7 +34,7 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
         <OrthographicCamera
           makeDefault
           position={[8, 14, 8]}
-          zoom={52}
+          zoom={64}
           near={0.1}
           far={100}
         />
@@ -43,17 +48,21 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
           shadow-mapSize={[1024, 1024]}
         />
 
-        {ROOM_ORDER.map((name) => (
-          <Room3D
-            key={name}
-            name={name}
-            config={roomConfigs[name]}
-            devices={devices.filter((d) => d.room === name)}
-            busy={busy}
-            onDeviceHover={onDeviceHover}
-            onDeviceToggle={onDeviceToggle}
-          />
-        ))}
+        {/* Center X/Z so the honeycomb always sits dead-center regardless of
+            viewport width (keeps Y — the raised back room stays elevated). */}
+        <Center disableY>
+          {ROOM_ORDER.map((name) => (
+            <Room3D
+              key={name}
+              name={name}
+              config={roomConfigs[name]}
+              devices={devices.filter((d) => d.room === name)}
+              busy={busy}
+              onDeviceHover={onDeviceHover}
+              onDeviceToggle={onDeviceToggle}
+            />
+          ))}
+        </Center>
 
         <ContactShadows
           position={[0, -0.17, 0]}
@@ -65,7 +74,7 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
 
         <OrbitControls
           makeDefault
-          target={[-0.8, 1.2, -0.8]}
+          target={[0, 2.7, 0]}
           enablePan={false}
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2.4}

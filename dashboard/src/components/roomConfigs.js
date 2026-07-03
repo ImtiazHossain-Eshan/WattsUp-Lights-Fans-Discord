@@ -44,15 +44,15 @@ export const roomConfigs = {
     furniture: ["sofa", "coffee table", "rug", "plants", "wall frames"],
     layoutStyle: "lounge",
     expectedUsage: "low",
-    accentColor: "#34d399", // green — low-usage lounge
+    accentColor: "#f0a24b", // warm amber — cozy lounge identity
     description: "Used occasionally by visitors or employees waiting.",
     scene: {
       position: BACK_CENTER,
       palette: {
-        wall: "#e6e1d6",
-        wallSide: "#d3ccbe",
-        floor: "#c2a37e",
-        trim: "#f6f4ef",
+        wall: "#c1793f", // warm terracotta — a cozy waiting room
+        wallSide: "#a9642f",
+        floor: "#9c6c42",
+        trim: "#f4ede1",
       },
       window: { wall: "z", offset: 1.35 }, // night window on the outer back wall
       // Ceiling devices spread over the seating area.
@@ -73,15 +73,15 @@ export const roomConfigs = {
     furniture: ["desks", "chairs", "monitors", "whiteboard", "plant"],
     layoutStyle: "office-workspace",
     expectedUsage: "high",
-    accentColor: "#60a5fa", // blue — primary workspace
+    accentColor: "#ec6a5e", // warm red — primary workspace identity
     description: "Primary work area for employees.",
     scene: {
       position: FRONT_LEFT,
       palette: {
-        wall: "#dde2e8",
-        wallSide: "#c8cfd8",
-        floor: "#b28c63",
-        trim: "#f6f4ef",
+        wall: "#a2413a", // deep brick red — the busy primary workspace
+        wallSide: "#89352f",
+        floor: "#93603b",
+        trim: "#f4ede1",
       },
       window: { wall: "x", offset: -1.2 }, // night window on the outer side wall
       // Lights over the desk row along the back wall, fans across the room.
@@ -102,15 +102,15 @@ export const roomConfigs = {
     furniture: ["desks", "chairs", "bookshelf", "notice board", "filing cabinet"],
     layoutStyle: "office-workspace-alt",
     expectedUsage: "high",
-    accentColor: "#2dd4bf", // teal — second workspace
+    accentColor: "#a78bfa", // violet — second workspace identity
     description: "Second employee work area, different arrangement.",
     scene: {
       position: FRONT_RIGHT,
       palette: {
-        wall: "#dbe3e0",
-        wallSide: "#c5d0cc",
-        floor: "#a6875f",
-        trim: "#f6f4ef",
+        wall: "#6b4a86", // muted violet — the alternate workspace
+        wallSide: "#593c70",
+        floor: "#8c5f3d",
+        trim: "#f4ede1",
       },
       // no window — its back wall carries the bookshelf + notice board
       // L-shaped desk arrangement → lights follow the two desk walls.

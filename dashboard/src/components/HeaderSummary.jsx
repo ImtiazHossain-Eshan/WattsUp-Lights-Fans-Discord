@@ -1,4 +1,5 @@
 import ConnectionStatus from "./ConnectionStatus.jsx";
+import Logo from "./Logo.jsx";
 import {
   BoltIcon,
   CalendarIcon,
@@ -43,15 +44,7 @@ export default function HeaderSummary({ usage, alerts, simulation, connected }) 
 
   return (
     <header className="header">
-      <div className="brand">
-        <span className="brand-mark">
-          <BoltIcon size={19} />
-        </span>
-        <div>
-          <h1>WattsUp</h1>
-          <p>Office energy monitor</p>
-        </div>
-      </div>
+      <Logo />
 
       <div className="header-stats">
         {stats.map(({ label, value, Icon, tone }) => (
