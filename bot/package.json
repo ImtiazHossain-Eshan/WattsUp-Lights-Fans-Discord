@@ -1,0 +1,27 @@
+{
+  "name": "office-power-bot",
+  "version": "1.0.0",
+  "description": "Discord bot for the WattsUp office electricity monitor — reads live data from the shared backend API.",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js"
+  },
+  "keywords": [
+    "discord",
+    "discord.js",
+    "office-monitoring"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

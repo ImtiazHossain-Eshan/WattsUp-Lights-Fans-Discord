@@ -1,0 +1,23 @@
+# dependencies
+node_modules/
+
+# environment secrets (keep .env.example, never commit real tokens)
+.env
+.env.local
+
+# build output
+dist/
+build/
+
+# logs
+*.log
+npm-debug.log*
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# local tooling
+.claude/
