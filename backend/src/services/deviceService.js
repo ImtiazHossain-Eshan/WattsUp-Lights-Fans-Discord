@@ -9,6 +9,7 @@
  */
 
 const { devices } = require("../data/devices");
+const { getOfficeNow } = require("./clockService");
 
 function findDevice(id) {
   return devices.find((d) => d.id === id) || null;
@@ -20,7 +21,7 @@ function findDevice(id) {
  * (re)stamped on an off→on transition and cleared when turned off. Used by the
  * simulator (auto) and by manual control alike.
  */
-function applyDeviceState(device, isOn, now = new Date()) {
+function applyDeviceState(device, isOn, now = getOfficeNow()) {
   const turningOn = Boolean(isOn);
   const wasOn = device.status === "on";
   const iso = now.toISOString();
@@ -33,14 +34,14 @@ function applyDeviceState(device, isOn, now = new Date()) {
 }
 
 /** Manual set: apply the state AND hand control to the user (manual mode). */
-function manualSetState(device, isOn, now = new Date()) {
+function manualSetState(device, isOn, now = getOfficeNow()) {
   applyDeviceState(device, isOn, now);
   device.controlMode = "manual";
   return device;
 }
 
 /** Manual toggle: flip on↔off and pin to manual. */
-function manualToggle(device, now = new Date()) {
+function manualToggle(device, now = getOfficeNow()) {
   return manualSetState(device, device.status !== "on", now);
 }
 
@@ -61,13 +62,13 @@ function resetAllToAuto() {
  * simulation is running (otherwise the simulator would flip them back on).
  * "Reset all to Auto" hands them back to the simulator afterwards.
  */
-function turnAllOff(now = new Date()) {
+function turnAllOff(now = getOfficeNow()) {
   for (const d of devices) manualSetState(d, false, now);
   return devices;
 }
 
 /** Same as turnAllOff but scoped to one (already-canonical) room name. */
-function turnRoomOff(roomName, now = new Date()) {
+function turnRoomOff(roomName, now = getOfficeNow()) {
   const roomDevices = devices.filter((d) => d.room === roomName);
   for (const d of roomDevices) manualSetState(d, false, now);
   return roomDevices;

@@ -1,8 +1,9 @@
 import ToggleSwitch from "./ToggleSwitch.jsx";
+import { ActivityIcon } from "./Icons.jsx";
 
 /**
- * Top-level controls: enable/disable the simulation, hand every device back to
- * the simulator (Reset all to Auto), or turn everything off (Turn all off).
+ * Simulation controls: enable/disable the simulated device layer, hand every
+ * device back to the simulator (Reset all to Auto), or turn everything off.
  *
  * Every action calls the backend first (via the handlers in App.jsx); this
  * component holds no device state of its own — it renders the simulation
@@ -16,9 +17,14 @@ export default function ControlBar({ simulation, busy, onToggleSim, onResetAuto,
 
   return (
     <div className="panel control-bar">
+      <h2>
+        <ActivityIcon size={15} /> Simulation controls
+        {manualCount > 0 && <small>{manualCount} manual</small>}
+      </h2>
+
       <div className="control-sim">
         <div className="control-sim-toggle">
-          <span className="control-label">Simulation</span>
+          <span className="control-label">Simulated device layer</span>
           <ToggleSwitch
             checked={enabled}
             busy={busy}
@@ -31,10 +37,13 @@ export default function ControlBar({ simulation, busy, onToggleSim, onResetAuto,
           {enabled
             ? `Running — auto-toggling one of ${autoCount} auto device${
                 autoCount === 1 ? "" : "s"
-              } every ${intervalSec}s`
-            : "Paused — devices only change through manual control"}
+              } every ${intervalSec}s.`
+            : "Paused — devices only change through manual control."}
           {manualCount > 0 && (
-            <span className="control-sim-manual"> · {manualCount} manual</span>
+            <span className="control-sim-manual">
+              {" "}
+              {manualCount} device{manualCount === 1 ? "" : "s"} pinned to manual.
+            </span>
           )}
         </p>
       </div>

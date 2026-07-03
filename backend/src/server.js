@@ -19,6 +19,7 @@ const roomsRoutes = require("./routes/rooms.routes");
 const usageRoutes = require("./routes/usage.routes");
 const alertsRoutes = require("./routes/alerts.routes");
 const simulationRoutes = require("./routes/simulation.routes");
+const clockRoutes = require("./routes/clock.routes");
 
 const PORT = Number.parseInt(process.env.PORT, 10) || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || "*"; // "*" keeps local demos friction-free
@@ -47,6 +48,8 @@ app.get("/", (req, res) => {
       "GET /api/alerts",
       "GET /api/simulation",
       "PATCH /api/simulation",
+      "GET /api/clock",
+      "PATCH /api/clock",
     ],
     socketEvents: [
       "devices:update",
@@ -54,6 +57,7 @@ app.get("/", (req, res) => {
       "usage:update",
       "alerts:update",
       "simulation:update",
+      "clock:update",
     ],
   });
 });
@@ -64,6 +68,7 @@ app.use("/api/rooms", roomsRoutes);
 app.use("/api/usage", usageRoutes);
 app.use("/api/alerts", alertsRoutes);
 app.use("/api/simulation", simulationRoutes);
+app.use("/api/clock", clockRoutes);
 
 // Unknown routes get a JSON 404 instead of an HTML error page.
 app.use((req, res) => {

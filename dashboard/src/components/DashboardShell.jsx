@@ -7,8 +7,14 @@ import PowerMeter from "./PowerMeter.jsx";
 import AlertsPanel from "./AlertsPanel.jsx";
 import BotCommandGuide from "./BotCommandGuide.jsx";
 import DeviceTooltip from "./DeviceTooltip.jsx";
+import { AlertTriangleIcon, LayoutIcon } from "./Icons.jsx";
 import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
 
+/**
+ * Page frame. Layout (top → bottom): header stats · banners · office scene +
+ * alerts · per-room device control cards · power breakdown / simulation
+ * controls / bot guide. All data & actions flow through props from App.jsx.
+ */
 export default function DashboardShell({
   devices,
   rooms,
@@ -22,7 +28,7 @@ export default function DashboardShell({
   actionError,
   actions,
 }) {
-  // One shared tooltip rendered in screen space (outside the 3D transforms)
+  // One shared tooltip rendered in screen space (outside the 3D canvas)
   // so text stays crisp: { device, x, y } | null
   const [tooltip, setTooltip] = useState(null);
 
@@ -37,7 +43,7 @@ export default function DashboardShell({
   if (loading) {
     return (
       <div className="splash">
-        <div className="splash-bolt">⚡</div>
+        <span className="splash-spinner" aria-hidden="true" />
         <p>Connecting to the office…</p>
       </div>
     );
@@ -47,32 +53,37 @@ export default function DashboardShell({
 
   return (
     <div className="shell">
-      <HeaderSummary usage={usage} alerts={alerts} connected={connected} />
+      <HeaderSummary
+        usage={usage}
+        alerts={alerts}
+        simulation={simulation}
+        connected={connected}
+      />
 
       {!connected && (
         <div className="error-banner" role="alert">
-          <span>⚠️</span>
+          <AlertTriangleIcon size={16} />
           <p>{error || "Lost connection to the backend — reconnecting automatically…"}</p>
         </div>
       )}
 
       {actionError && (
         <div className="error-banner error-banner--action" role="alert">
-          <span>⚠️</span>
+          <AlertTriangleIcon size={16} />
           <p>{actionError}</p>
         </div>
       )}
 
-      <ControlBar
-        simulation={simulation}
-        busy={busy}
-        onToggleSim={actions.toggleSimulation}
-        onResetAuto={actions.resetAllToAuto}
-        onAllOff={actions.turnAllOff}
-      />
-
       <main className="layout">
         <section className="scene-column">
+          <div className="scene-head">
+            <h2>
+              <LayoutIcon size={15} /> Office layout
+            </h2>
+            <span className="scene-hint">
+              drag to orbit · click a device to toggle · hover for details
+            </span>
+          </div>
           <OfficeLayout
             devices={devices}
             busy={busy}
@@ -82,7 +93,6 @@ export default function DashboardShell({
         </section>
 
         <aside className="side-column">
-          <PowerMeter usage={usage} />
           <AlertsPanel alerts={alerts} />
         </aside>
       </main>
@@ -104,14 +114,22 @@ export default function DashboardShell({
         ))}
       </section>
 
-      <section className="bottom-row bottom-row--single">
+      <section className="bottom-grid">
+        <PowerMeter usage={usage} />
+        <ControlBar
+          simulation={simulation}
+          busy={busy}
+          onToggleSim={actions.toggleSimulation}
+          onResetAuto={actions.resetAllToAuto}
+          onAllOff={actions.turnAllOff}
+        />
         <BotCommandGuide />
       </section>
 
       <footer className="footer">
         <span>
           WattsUp · one shared backend feeds this dashboard and the Discord bot — same
-          data, two windows.
+          data, two views.
         </span>
       </footer>
 

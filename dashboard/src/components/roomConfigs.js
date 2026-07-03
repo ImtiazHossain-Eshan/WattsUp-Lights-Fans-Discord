@@ -44,15 +44,15 @@ export const roomConfigs = {
     furniture: ["sofa", "coffee table", "rug", "plants", "wall frames"],
     layoutStyle: "lounge",
     expectedUsage: "low",
-    accentColor: "#f0a860", // warm amber — matches its walls
+    accentColor: "#34d399", // green — low-usage lounge
     description: "Used occasionally by visitors or employees waiting.",
     scene: {
       position: BACK_CENTER,
       palette: {
-        wall: "#d09455",
-        wallSide: "#b57c41",
-        floor: "#c99a63",
-        trim: "#f5eee2",
+        wall: "#e6e1d6",
+        wallSide: "#d3ccbe",
+        floor: "#c2a37e",
+        trim: "#f6f4ef",
       },
       window: { wall: "z", offset: 1.35 }, // night window on the outer back wall
       // Ceiling devices spread over the seating area.
@@ -73,15 +73,15 @@ export const roomConfigs = {
     furniture: ["desks", "chairs", "monitors", "whiteboard", "plant"],
     layoutStyle: "office-workspace",
     expectedUsage: "high",
-    accentColor: "#ef8296", // crimson — matches its walls
+    accentColor: "#60a5fa", // blue — primary workspace
     description: "Primary work area for employees.",
     scene: {
       position: FRONT_LEFT,
       palette: {
-        wall: "#b04d5e",
-        wallSide: "#933c4c",
-        floor: "#aa7a4f",
-        trim: "#f5eee2",
+        wall: "#dde2e8",
+        wallSide: "#c8cfd8",
+        floor: "#b28c63",
+        trim: "#f6f4ef",
       },
       window: { wall: "x", offset: -1.2 }, // night window on the outer side wall
       // Lights over the desk row along the back wall, fans across the room.
@@ -102,15 +102,15 @@ export const roomConfigs = {
     furniture: ["desks", "chairs", "bookshelf", "notice board", "filing cabinet"],
     layoutStyle: "office-workspace-alt",
     expectedUsage: "high",
-    accentColor: "#c893e0", // violet — matches its walls
+    accentColor: "#2dd4bf", // teal — second workspace
     description: "Second employee work area, different arrangement.",
     scene: {
       position: FRONT_RIGHT,
       palette: {
-        wall: "#8a4f9e",
-        wallSide: "#703e82",
-        floor: "#7c5a86",
-        trim: "#f5eee2",
+        wall: "#dbe3e0",
+        wallSide: "#c5d0cc",
+        floor: "#a6875f",
+        trim: "#f6f4ef",
       },
       // no window — its back wall carries the bookshelf + notice board
       // L-shaped desk arrangement → lights follow the two desk walls.

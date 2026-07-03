@@ -34,8 +34,8 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
           far={100}
         />
 
-        <ambientLight intensity={0.6} />
-        <hemisphereLight args={["#ffd9b0", "#241019", 0.5]} />
+        <ambientLight intensity={0.65} />
+        <hemisphereLight args={["#e4e9f0", "#2a2f38", 0.55]} />
         <directionalLight
           position={[6, 12, 5]}
           intensity={1.0}

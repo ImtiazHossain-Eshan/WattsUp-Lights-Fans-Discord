@@ -38,6 +38,11 @@ export async function fetchSimulation() {
   return data;
 }
 
+export async function fetchClock() {
+  const { data } = await client.get("/clock");
+  return data;
+}
+
 export async function fetchHealth() {
   const { data } = await client.get("/health");
   return data;
@@ -86,5 +91,11 @@ export async function turnRoomOff(roomName) {
 
 export async function setSimulation(enabled) {
   const { data } = await client.patch("/simulation", { enabled });
+  return data;
+}
+
+/** Configure the office clock: { time: "18:30" } | { speed: 60 } | { reset: true } */
+export async function setClock(payload) {
+  const { data } = await client.patch("/clock", payload);
   return data;
 }
