@@ -1,3 +1,5 @@
+import DeviceIcon from "./DeviceIcon.jsx";
+
 function formatTime(iso) {
   if (!iso) return "—";
   const date = new Date(iso);
@@ -25,7 +27,7 @@ export default function DeviceTooltip({ tooltip }) {
   return (
     <div className="tooltip" style={style} role="tooltip">
       <div className="tooltip-title">
-        <span>{device.type === "fan" ? "🌀" : "💡"}</span>
+        <DeviceIcon type={device.type} on={on} size={20} />
         <strong>{device.name}</strong>
         <span className={`pill ${on ? "pill--on" : "pill--off"}`}>
           {on ? "ON" : "OFF"}
@@ -35,6 +37,16 @@ export default function DeviceTooltip({ tooltip }) {
         <div>
           <dt>Room</dt>
           <dd>{device.room}</dd>
+        </div>
+        <div>
+          <dt>Mode</dt>
+          <dd className={`mode-text mode-text--${device.controlMode}`}>
+            {device.controlMode === "manual" ? "Manual" : "Auto"}
+          </dd>
+        </div>
+        <div>
+          <dt>Click</dt>
+          <dd>to toggle (manual)</dd>
         </div>
         <div>
           <dt>Power</dt>

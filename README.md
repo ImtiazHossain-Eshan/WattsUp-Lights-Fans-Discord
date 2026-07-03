@@ -18,16 +18,42 @@ always agree.
 > lights per room, **this implementation uses 15 devices total** (6 fans + 9 lights).
 > No invented sixth device. Also documented in `docs/validation-checklist.md`.
 
-## The office
+## The office — same devices, different rooms
 
-| Room | Purpose | Devices |
-|------|---------|---------|
-| Drawing Room | Waiting area | Fan 1, Fan 2, Light 1, Light 2, Light 3 |
-| Work Room 1 | Employee work area | Fan 1, Fan 2, Light 1, Light 2, Light 3 |
-| Work Room 2 | Employee work area | Fan 1, Fan 2, Light 1, Light 2, Light 3 |
+**Every room has exactly the same device structure: 2 fans + 3 lights.** What differs
+is each room's *purpose* — and the dashboard makes that visible: different furniture,
+layout, accent and simulation behavior per room.
+
+| Room | Purpose | Expected usage | Accent | Devices |
+|------|---------|----------------|--------|---------|
+| Drawing Room | **Waiting / lounge area** — used occasionally by visitors | low | green/slate | Fan 1, Fan 2, Light 1, Light 2, Light 3 |
+| Work Room 1 | **Employee work area** — primary workspace | high | blue/slate | Fan 1, Fan 2, Light 1, Light 2, Light 3 |
+| Work Room 2 | **Employee work area** — second workspace, different arrangement | high | teal/slate | Fan 1, Fan 2, Light 1, Light 2, Light 3 |
 
 Fan = **60 W** when ON · Light = **15 W** when ON · anything OFF = 0 W.
 Office max: 495 W. Only simulated device data exists — **no people data anywhere**.
+
+### Room identities & configs
+
+All room-specific behavior is driven by two small configs — no per-room components,
+no duplicated code:
+
+- **`dashboard/src/components/roomConfigs.js`** — visual identity per room: label,
+  subtitle, purpose (`waiting_area` / `workspace`), furniture list, `layoutStyle`,
+  accent color, description, which furnished room of the low-poly GLB backs it, and
+  where its five devices hang. `OfficeLayout` groups devices by room, loads the
+  matching config and renders one generic `Room3D`/`RoomCard` per room.
+  - *Drawing Room* renders as a **lounge**: sofa, center table, TV dresser, plant,
+    wall frames and a rug — softer and warmer than the work rooms.
+  - *Work Room 1* renders as a **workspace**: desk, chair, PC setup, wall shelves,
+    projector screen and a whiteboard.
+  - *Work Room 2* is a **workspace with a different arrangement**: desks + chairs
+    laid out differently, bookshelf, notice boards, an extra monitor workstation and
+    a filing cabinet.
+- **`backend/src/data/devices.js` (ROOMS)** — semantic identity per room (name,
+  description, `type`, `expectedUsage`) plus the **simulation profile** used by the
+  weighted simulator (below). Exposed via `/api/rooms`, so the Discord bot sees the
+  same purposes.
 
 ## Features
 
@@ -36,9 +62,16 @@ Office max: 495 W. Only simulated device data exists — **no people data anywhe
   and soft contact shadows — ceiling fans **spin** and pendant lights **glow** (real point
   lights), all driven by live backend state. Devices are drawn procedurally on top of the
   models, so every visual stays 100% data-driven
-- 📊 **Live panels**: total power meter, estimated kWh today, per-room bars, all-15-device
-  status list, alerts feed — updated via Socket.IO with **no page refresh**
-- 🖱️ **Hover tooltips** on every scene device: name, room, status, watts, last changed
+- 🎛️ **Manual + auto control**: every device has a `controlMode` (`auto`/`manual`). The
+  simulator only touches **auto** devices; **manual** ones are the user's. Toggle any
+  device's power or mode, click a fan/light in the 3D scene to toggle it, turn a whole
+  room (or everything) off, reset all back to auto, or flip the simulation on/off — all
+  from the dashboard. Controls **write to the backend first**; the UI updates from the
+  broadcast, never from local-only state
+- 📊 **Live panels**: total power meter, estimated kWh today, per-room bars, per-room
+  device control cards (ON/OFF + Auto/Manual, dynamic SVG fan/light icons), alerts feed
+  — updated via Socket.IO with **no page refresh**
+- 🖱️ **Hover tooltips** on every scene device: name, room, status, watts, mode, last changed
 - 🤖 **Discord bot**: `!status`, `!room <name>`, `!usage`, `!alerts`, `!help` — plus
   **proactive alert posts** to a channel (30 s poll, deduped by stable alert IDs)
 - 🚨 **Alert engine**: after-hours devices (outside 9 AM–5 PM) and rooms fully ON for 2+ hours
@@ -87,23 +120,25 @@ The backend owns everything.
 │   └── src/
 │       ├── server.js              # Express + Socket.IO + simulator bootstrap
 │       ├── socket.js              # io setup, snapshot-on-connect, emitState()
-│       ├── data/devices.js        # the 15-device store (source of truth)
+│       ├── data/devices.js        # the 15-device store (source of truth, incl. controlMode)
 │       ├── services/
-│       │   ├── simulator.js       # simulated device layer (1 toggle / 5 s)
+│       │   ├── simulator.js       # simulated device layer (toggles AUTO devices when enabled)
+│       │   ├── simulationState.js # the simulation on/off flag + snapshot
+│       │   ├── deviceService.js   # the one place that mutates device state / mode
 │       │   ├── usageService.js    # totals, per-room W, estimated kWh
 │       │   ├── alertService.js    # after-hours + long-running rules
 │       │   └── roomService.js     # room summaries/details
-│       ├── routes/                # health, devices, rooms, usage, alerts
+│       ├── routes/                # health, devices, rooms, usage, alerts, simulation
 │       └── utils/roomAliases.js   # "work1" → "Work Room 1"
 ├── dashboard/
 │   ├── public/models/            # GLB room assets (room-iso.glb + props)
 │   └── src/
-│       ├── App.jsx                # state + REST bootstrap + socket wiring
-│       ├── api.js · socket.js     # backend clients
-│       ├── components/            # shell, header, Three.js scene (OfficeScene3D +
-│       │                          # Room3D + scene3d.config), panels, meter,
-│       │                          # tooltip, alerts, bot guide
-│       └── styles/app.css         # glassmorphism panels + scene overlays
+│       ├── App.jsx                # state + REST bootstrap + socket wiring + control actions
+│       ├── api.js · socket.js     # backend clients (reads + control PATCHes)
+│       ├── components/            # shell, header, ControlBar, Three.js scene (OfficeScene3D +
+│       │                          # Room3D + scene3d.config), DevicePanel cards, DeviceIcon
+│       │                          # (SVG fan/light), ToggleSwitch, meter, tooltip, alerts
+│       └── styles/app.css         # glassmorphism panels + scene overlays + control styles
 ├── bot/bot.js                     # all commands + proactive alert poller
 ├── diagrams/                      # system architecture + hardware schematic
 ├── docs/                          # setup, demo script, validation, API, testing
@@ -131,28 +166,45 @@ npm run dev
 `DISCORD_TOKEN` and needs **MESSAGE CONTENT INTENT** enabled in the Discord Developer
 Portal. All variables are documented in each `\.env.example` and in the setup guide.
 
-## API (all GET)
+## API
+
+**Read (GET)**
 
 | Endpoint | Returns |
 |----------|---------|
 | `/api/health` | `{ status, service, timestamp, uptimeSeconds }` |
-| `/api/devices` | `{ count: 15, devices: [...] }` |
+| `/api/devices` | `{ count: 15, devices: [...] }` (each device has `controlMode`) |
 | `/api/rooms` | `{ count: 3, rooms: [summaries incl. devices] }` |
 | `/api/rooms/:roomName` | one room; aliases `drawing`/`work1`/`work room 2`…; 404 + valid list if unknown |
 | `/api/usage` | total W, devices on, estimated kWh today, per-room breakdown |
 | `/api/alerts` | active alerts with stable IDs |
+| `/api/simulation` | `{ enabled, intervalMs, autoDevices, manualDevices, totalDevices }` |
+
+**Control (PATCH)** — the manual-control surface. Each one re-derives rooms/usage/alerts
+and rebroadcasts over Socket.IO, so every client updates immediately.
+
+| Endpoint | Does |
+|----------|------|
+| `/api/devices/:id/toggle` | flip on↔off (sets `controlMode: manual`) |
+| `/api/devices/:id/state` | set on/off explicitly (`{status}` or `{on}`; sets manual) |
+| `/api/devices/:id/mode` | set `controlMode` `auto`/`manual` (no state change) |
+| `/api/devices/reset-auto` | hand every device back to the simulator (all `auto`) |
+| `/api/devices/all-off` | turn everything off + pin to `manual` |
+| `/api/rooms/:roomName/all-off` | turn one room off + pin to `manual` |
+| `/api/simulation` | `{enabled}` — enable/disable the simulator |
 
 Examples with full payloads: [`docs/api-reference.md`](docs/api-reference.md)
 
-**Socket.IO events** (full snapshot on connect, then after every simulator tick):
-`devices:update` · `rooms:update` · `usage:update` · `alerts:update`
+**Socket.IO events** (full snapshot on connect, then after every simulator tick **and
+every manual control change**):
+`devices:update` · `rooms:update` · `usage:update` · `alerts:update` · `simulation:update`
 
 ## Bot commands
 
 | Command | What it does |
 |---------|--------------|
-| `!status` | all-room summary + totals |
-| `!room <name>` | one room's 5 devices + power (aliases accepted) |
+| `!status` | all-room summary + totals + simulation state |
+| `!room <name>` | one room's 5 devices + power + 🔄 auto / 🔒 manual (aliases accepted) |
 | `!usage` | total W, estimated kWh today, per-room ▰▰▱ bars |
 | `!alerts` | active alerts, or a friendly all-clear |
 | `!help` | command list |
@@ -185,12 +237,19 @@ Alerts carry `id, type, room, deviceId?, message, timestamp, severity`. IDs enco
 ON-session start, so they're stable while the condition persists (that's the bot's
 dedupe key) and timestamps don't drift between recalculations.
 
-## Simulation
+## Simulation & control
 
-`simulator.js` toggles one random device every `SIMULATION_INTERVAL_MS` (5 s default),
-updating `status`, `currentPower`, `lastChanged`, `turnedOnAt`, then recalculates room
-summaries, usage and alerts and emits all four socket events. It only ever mutates the
-fixed 15-device store: no new rooms, no new devices, no people, no wattage drift.
+`simulator.js` toggles one random **auto** device every `SIMULATION_INTERVAL_MS` (5 s
+default) **while the simulation is enabled**, updating `status`, `currentPower`,
+`lastChanged`, `turnedOnAt`, then recalculates room summaries, usage and alerts and emits
+the socket events. It only ever mutates the fixed 15-device store — no new rooms, no new
+devices, no people, no wattage drift — and it **never touches a `manual` device**.
+
+Manual control (dashboard buttons, scene clicks, or `PATCH` calls) sets a device to
+`manual` so the simulator won't overwrite it; **Reset all to Auto** hands everything back.
+The simulation itself can be paused/resumed live (`PATCH /api/simulation`, or start paused
+with `SIMULATION_ENABLED=false`). Every control change goes through the backend and is
+rebroadcast, so the dashboard and Discord bot always agree.
 
 ## Testing & demo
 
@@ -220,8 +279,8 @@ fuses; GPIOs never switch mains): [`diagrams/hardware-schematic.md`](diagrams/ha
 ## Future improvements
 
 - Persist device history (SQLite) → real kWh integration + daily/weekly charts
-- Control path: POST /api/devices/:id/toggle + a real ESP32 talking to the backend
-- Discord slash commands, per-room subscriptions, daily usage digest
+- Push the control path to hardware: a real ESP32 acting on `PATCH /api/devices/:id/*`
+- Discord slash commands to *control* devices (read + control already share one backend)
 - Cost estimation (kWh × tariff) and monthly budget alerts
 
 ---

@@ -1,8 +1,18 @@
 # API Reference
 
-Base URL: `http://localhost:5000` (configurable via `PORT`). All endpoints are `GET`
-and return JSON. There are intentionally **no write endpoints** — only the simulator
-mutates state, which is what keeps the backend the single source of truth.
+Base URL: `http://localhost:5000` (configurable via `PORT`). All endpoints return JSON.
+`GET` endpoints read the live state; `PATCH` endpoints are the **manual control**
+surface (toggle a device, set its mode, control the simulation…). The backend is the
+**single source of truth**: it is the only thing that mutates the device store — the
+dashboard and Discord bot never do — and every `PATCH` re-derives rooms/usage/alerts and
+rebroadcasts them over Socket.IO, so all clients stay in sync.
+
+Each device now carries a **`controlMode`** of `"auto"` or `"manual"`:
+
+- `auto` — the simulator may toggle it (when the simulation is enabled).
+- `manual` — only a user can change it; the simulator leaves it alone.
+
+Any manual on/off change automatically sets that device to `manual`.
 
 ## GET /api/health
 
@@ -30,6 +40,7 @@ consistent with `status` (fan 60 W / light 15 W when ON, 0 W when OFF).
       "type": "fan",
       "room": "Drawing Room",
       "status": "on",
+      "controlMode": "auto",
       "wattage": 60,
       "currentPower": 60,
       "lastChanged": "2026-07-03T14:51:58.480Z",
@@ -38,6 +49,34 @@ consistent with `status` (fan 60 W / light 15 W when ON, 0 W when OFF).
   ]
 }
 ```
+
+## PATCH /api/devices/:id/toggle
+
+Flip a device on↔off (manual control). Sets `controlMode: "manual"` and updates
+`status`, `currentPower`, `lastChanged`, `turnedOnAt`. Returns `{ ok, device }`.
+Unknown id → **404** `{ "error": "unknown-device", … }`.
+
+## PATCH /api/devices/:id/state
+
+Set an explicit state. Body: `{"status":"on"|"off"}` **or** `{"on":true|false}`.
+Also pins the device to `manual`. Returns `{ ok, device }`. Missing/invalid body →
+**400**; unknown id → **404**.
+
+## PATCH /api/devices/:id/mode
+
+Switch a single device's control mode **without** changing its on/off state.
+Body: `{"mode":"auto"|"manual"}`. Returns `{ ok, device }`. Invalid mode → **400**.
+
+## PATCH /api/devices/reset-auto
+
+Hand **every** device back to the simulator (`controlMode: "auto"`), leaving on/off
+state untouched. Returns `{ ok, count, devices }`.
+
+## PATCH /api/devices/all-off
+
+Turn **every** device off and pin them to `manual` (so they stay off even while the
+simulation runs — "Reset all to Auto" hands them back afterwards). Returns
+`{ ok, count, devices }`.
 
 ## GET /api/rooms
 
@@ -78,6 +117,11 @@ Unknown room → **404**:
   "hint": "Try \"drawing\", \"work1\" or \"work2\"."
 }
 ```
+
+## PATCH /api/rooms/:roomName/all-off
+
+Turn one room's devices off and pin them to `manual`. `:roomName` accepts the same
+aliases as the GET route. Returns `{ ok, room, count, devices }`; unknown room → **404**.
 
 ## GET /api/usage
 
@@ -126,15 +170,37 @@ bot dedupes proactive posts; timestamps are pinned to first detection.
 Alert types: `after-hours` (severity `warning`) · `long-running-room` (severity
 `critical`, fires when all 5 devices of a room have been ON for more than 2 h).
 
+## GET /api/simulation
+
+Whether the simulated device layer is running, plus live auto/manual counts.
+
+```json
+{
+  "enabled": true,
+  "intervalMs": 5000,
+  "autoDevices": 12,
+  "manualDevices": 3,
+  "totalDevices": 15
+}
+```
+
+## PATCH /api/simulation
+
+Enable or disable the simulator. Body: `{"enabled":true|false}`. Returns the same
+shape as the GET. While disabled, devices only change through manual control; while
+enabled, one random **auto** device is toggled every `intervalMs`. Invalid body → **400**.
+
 ## Socket.IO events (server → client)
 
 Connect to the base URL with socket.io-client. On connection the server immediately
-emits a full snapshot; afterwards all four events are re-emitted after every simulator
-tick (~5 s).
+emits a full snapshot; afterwards all events are re-emitted after every simulator tick
+(~5 s) **and after every manual control change** (`PATCH`), so the dashboard reflects
+manual actions instantly.
 
 | Event | Payload |
 |-------|---------|
-| `devices:update` | array of 15 device objects |
+| `devices:update` | array of 15 device objects (incl. `controlMode`) |
 | `rooms:update` | array of 3 room summaries |
 | `usage:update` | usage summary object |
 | `alerts:update` | array of active alerts |
+| `simulation:update` | simulation state (`enabled`, `intervalMs`, auto/manual counts) |

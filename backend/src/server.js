@@ -18,6 +18,7 @@ const devicesRoutes = require("./routes/devices.routes");
 const roomsRoutes = require("./routes/rooms.routes");
 const usageRoutes = require("./routes/usage.routes");
 const alertsRoutes = require("./routes/alerts.routes");
+const simulationRoutes = require("./routes/simulation.routes");
 
 const PORT = Number.parseInt(process.env.PORT, 10) || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || "*"; // "*" keeps local demos friction-free
@@ -34,12 +35,26 @@ app.get("/", (req, res) => {
     endpoints: [
       "GET /api/health",
       "GET /api/devices",
+      "PATCH /api/devices/:id/toggle",
+      "PATCH /api/devices/:id/state",
+      "PATCH /api/devices/:id/mode",
+      "PATCH /api/devices/reset-auto",
+      "PATCH /api/devices/all-off",
       "GET /api/rooms",
       "GET /api/rooms/:roomName",
+      "PATCH /api/rooms/:roomName/all-off",
       "GET /api/usage",
       "GET /api/alerts",
+      "GET /api/simulation",
+      "PATCH /api/simulation",
     ],
-    socketEvents: ["devices:update", "rooms:update", "usage:update", "alerts:update"],
+    socketEvents: [
+      "devices:update",
+      "rooms:update",
+      "usage:update",
+      "alerts:update",
+      "simulation:update",
+    ],
   });
 });
 
@@ -48,6 +63,7 @@ app.use("/api/devices", devicesRoutes);
 app.use("/api/rooms", roomsRoutes);
 app.use("/api/usage", usageRoutes);
 app.use("/api/alerts", alertsRoutes);
+app.use("/api/simulation", simulationRoutes);
 
 // Unknown routes get a JSON 404 instead of an HTML error page.
 app.use((req, res) => {
@@ -55,8 +71,8 @@ app.use((req, res) => {
 });
 
 const server = http.createServer(app);
-const io = initSocket(server, CLIENT_URL);
-startSimulator(io);
+initSocket(server, CLIENT_URL); // captures `io` for broadcastState()
+startSimulator();
 
 server.listen(PORT, () => {
   console.log("──────────────────────────────────────────────");

@@ -10,10 +10,39 @@
 
 const WATTAGE = { fan: 60, light: 15 };
 
+/**
+ * Room identities. Same device structure everywhere (2 fans + 3 lights), but
+ * different purposes — which drives the dashboard visuals AND the simulator:
+ *
+ * `simulation` is the probability a device in this room *wants* to be ON when
+ * the simulator inspects it (per office-hours vs after-hours). Work rooms run
+ * hot during the day; the drawing room is only used occasionally by visitors.
+ */
 const ROOMS = [
-  { name: "Drawing Room", slug: "drawing-room", description: "Waiting area" },
-  { name: "Work Room 1", slug: "work-room-1", description: "Employee work area" },
-  { name: "Work Room 2", slug: "work-room-2", description: "Employee work area" },
+  {
+    name: "Drawing Room",
+    slug: "drawing-room",
+    description: "Waiting / lounge area",
+    type: "waiting_area",
+    expectedUsage: "low",
+    simulation: { officeHours: 0.3, afterHours: 0.05 },
+  },
+  {
+    name: "Work Room 1",
+    slug: "work-room-1",
+    description: "Employee work area",
+    type: "workspace",
+    expectedUsage: "high",
+    simulation: { officeHours: 0.75, afterHours: 0.08 },
+  },
+  {
+    name: "Work Room 2",
+    slug: "work-room-2",
+    description: "Employee work area",
+    type: "workspace",
+    expectedUsage: "high",
+    simulation: { officeHours: 0.65, afterHours: 0.08 },
+  },
 ];
 
 // Realistic mixed starting pattern (8 of 15 devices ON) — not all ON, not all OFF.
@@ -38,6 +67,9 @@ function createInitialDevices() {
           type,
           room: room.name,
           status: isOn ? "on" : "off",
+          // "auto" → the simulator may toggle it; "manual" → only a user can.
+          // Everything starts in auto so the simulation animates out of the box.
+          controlMode: "auto",
           wattage: WATTAGE[type],
           currentPower: isOn ? WATTAGE[type] : 0,
           lastChanged: now,
@@ -50,7 +82,8 @@ function createInitialDevices() {
   return devices;
 }
 
-// The live store. Only the simulator mutates it; everything else reads it.
+// The live store (source of truth). Mutated only by the simulator (auto devices)
+// and the manual-control routes via deviceService; everything else reads it.
 const devices = createInitialDevices();
 
 module.exports = { devices, createInitialDevices, ROOMS, WATTAGE };

@@ -69,11 +69,22 @@ function relTime(iso) {
   return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
 }
 
+function modeTag(d) {
+  return d.controlMode === "manual" ? "🔒 manual" : "🔄 auto";
+}
+
 function deviceLine(d) {
   const icon = d.type === "fan" ? "🌀" : "💡";
   return d.status === "on"
-    ? `${icon} **${d.name}** — 🟢 ON · ${d.currentPower} W (since ${relTime(d.turnedOnAt) || "a moment ago"})`
-    : `${icon} **${d.name}** — ⚫ off`;
+    ? `${icon} **${d.name}** — 🟢 ON · ${d.currentPower} W · ${modeTag(d)} (since ${relTime(d.turnedOnAt) || "a moment ago"})`
+    : `${icon} **${d.name}** — ⚫ off · ${modeTag(d)}`;
+}
+
+function simulationLine(sim) {
+  if (!sim) return null;
+  return sim.enabled
+    ? `🔁 Simulation **ON** — auto-toggling ${sim.autoDevices} device${sim.autoDevices === 1 ? "" : "s"} (${sim.manualDevices} manual)`
+    : `⏸️ Simulation **OFF** — devices only change on manual control (${sim.manualDevices} manual)`;
 }
 
 function backendDownMessage() {
@@ -86,9 +97,14 @@ function backendDownMessage() {
 /* ---------- command handlers (all data comes from the backend) ---------- */
 
 async function handleStatus(message) {
-  const [roomsRes, usageRes] = await Promise.all([api.get("/rooms"), api.get("/usage")]);
+  const [roomsRes, usageRes, simRes] = await Promise.all([
+    api.get("/rooms"),
+    api.get("/usage"),
+    api.get("/simulation"),
+  ]);
   const { rooms } = roomsRes.data;
   const usage = usageRes.data;
+  const sim = simRes.data;
 
   const lines = rooms.map(
     (r) =>
@@ -100,6 +116,7 @@ async function handleStatus(message) {
     [
       `🏢 **Office right now** — ${usage.totalPowerWatts} W total, ` +
         `${usage.devicesOn} of ${usage.totalDevices} devices on`,
+      simulationLine(sim),
       "",
       ...lines,
       "",
@@ -185,8 +202,8 @@ async function handleHelp(message) {
     [
       "👋 **WattsUp bot** — I watch the office lights & fans (live from the shared backend):",
       "",
-      "`!status` — all-room summary",
-      "`!room <name>` — one room in detail (`drawing`, `work1`, `work room 2`…)",
+      "`!status` — all-room summary + simulation state",
+      "`!room <name>` — one room in detail, incl. 🔄 auto / 🔒 manual per device",
       "`!usage` — total power, estimated kWh today, per-room breakdown",
       "`!alerts` — active after-hours / long-running alerts",
       "`!help` — this list",

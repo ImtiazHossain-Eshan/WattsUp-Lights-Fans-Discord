@@ -33,7 +33,58 @@ export async function fetchAlerts() {
   return data.alerts;
 }
 
+export async function fetchSimulation() {
+  const { data } = await client.get("/simulation");
+  return data;
+}
+
 export async function fetchHealth() {
   const { data } = await client.get("/health");
+  return data;
+}
+
+/* ---------- control actions (write to the backend, the source of truth) ----------
+ * These never mutate local state directly. Callers await them, then let the
+ * backend's Socket.IO broadcast update the UI — so the dashboard, the bot and
+ * every other client always reflect exactly what the backend stored. */
+
+export async function toggleDevice(id) {
+  const { data } = await client.patch(`/devices/${encodeURIComponent(id)}/toggle`);
+  return data.device;
+}
+
+export async function setDeviceState(id, on) {
+  const { data } = await client.patch(`/devices/${encodeURIComponent(id)}/state`, {
+    status: on ? "on" : "off",
+  });
+  return data.device;
+}
+
+export async function setDeviceMode(id, mode) {
+  const { data } = await client.patch(`/devices/${encodeURIComponent(id)}/mode`, {
+    mode,
+  });
+  return data.device;
+}
+
+export async function resetAllToAuto() {
+  const { data } = await client.patch("/devices/reset-auto");
+  return data.devices;
+}
+
+export async function turnAllOff() {
+  const { data } = await client.patch("/devices/all-off");
+  return data.devices;
+}
+
+export async function turnRoomOff(roomName) {
+  const { data } = await client.patch(
+    `/rooms/${encodeURIComponent(roomName)}/all-off`
+  );
+  return data.devices;
+}
+
+export async function setSimulation(enabled) {
+  const { data } = await client.patch("/simulation", { enabled });
   return data;
 }

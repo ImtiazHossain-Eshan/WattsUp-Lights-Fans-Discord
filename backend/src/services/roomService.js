@@ -9,6 +9,8 @@ function summarizeRoom(roomMeta, devices) {
   return {
     room: roomMeta.name,
     description: roomMeta.description,
+    type: roomMeta.type,
+    expectedUsage: roomMeta.expectedUsage,
     fansOn: roomDevices.filter((d) => d.type === "fan" && d.status === "on").length,
     lightsOn: roomDevices.filter((d) => d.type === "light" && d.status === "on").length,
     devicesOn: roomDevices.filter((d) => d.status === "on").length,
