@@ -311,13 +311,13 @@ export default function RoomFurniture({ layoutStyle }) {
     case "lounge":
       return (
         <group>
-          {/* seating group kept toward the back-left — the room's front/right
-              strips sit behind the front rooms' walls (reference-style cutoff) */}
-          <Rug position={[-0.5, 0, -0.35]} size={[2.3, 2.6]} />
-          <Sofa position={[-1.62, 0, -0.35]} rotationY={Math.PI / 2} />
-          <CoffeeTable position={[-0.35, 0, -0.35]} />
+          {/* the room is raised above the front walls, so the whole floor is
+              visible — seating can sit naturally in the middle */}
+          <Rug position={[-0.35, 0, 0]} size={[2.4, 2.7]} />
+          <Sofa position={[-1.55, 0, 0]} rotationY={Math.PI / 2} />
+          <CoffeeTable position={[-0.25, 0, 0]} />
           <Plant position={[-1.85, 0, -1.8]} />
-          <Plant position={[0.95, 0, -1.85]} />
+          <Plant position={[1.55, 0, 1.55]} />
           <WallFrames position={[-0.1, 1.5, -2.14]} />
         </group>
       );
@@ -344,9 +344,10 @@ export default function RoomFurniture({ layoutStyle }) {
           <OfficeChair position={[-0.5, 0, -1.02]} rotationY={Math.PI} />
           <Workstation position={[-1.78, 0, 0.9]} rotationY={Math.PI / 2} />
           <OfficeChair position={[-1.02, 0, 0.9]} rotationY={-Math.PI / 2} />
-          <Bookshelf position={[1.15, 0, -1.95]} />
+          <Bookshelf position={[1.55, 0, -1.95]} />
           <NoticeBoard position={[-0.5, 1.5, -2.14]} />
-          <FilingCabinet position={[1.8, 0, 0.9]} rotationY={Math.PI / 2} />
+          {/* backs onto the rear wall, drawers opening into the room */}
+          <FilingCabinet position={[0.5, 0, -1.87]} />
         </group>
       );
 

@@ -153,7 +153,7 @@ const T = WALL_THICKNESS;
  * trim caps, a door on the -X wall and an optional night window. Two wall
  * tones per room (like the reference render) come from the config palette.
  */
-function RoomShell({ palette, window: win }) {
+function RoomShell({ palette, window: win, elevation = 0 }) {
   return (
     <group>
       {/* floor slab (top at y=0) */}
@@ -161,6 +161,15 @@ function RoomShell({ palette, window: win }) {
         <boxGeometry args={[ROOM_SIZE, 0.16, ROOM_SIZE]} />
         <meshStandardMaterial color={palette.floor} roughness={0.85} />
       </mesh>
+
+      {/* solid plinth down to the ground for raised rooms — reads as the
+          building's facade continuing below the floor while orbiting */}
+      {elevation > 0.2 && (
+        <mesh position={[0, -(elevation + 0.16) / 2, 0]}>
+          <boxGeometry args={[ROOM_SIZE, elevation - 0.16, ROOM_SIZE]} />
+          <meshStandardMaterial color={palette.wallSide} roughness={0.9} />
+        </mesh>
+      )}
 
       {/* back wall (-Z) + trim cap */}
       <mesh position={[0, WALL_HEIGHT / 2, -HALF + T / 2]} receiveShadow>
@@ -266,7 +275,11 @@ export default function Room3D({
 
   return (
     <group position={sceneCfg.position}>
-      <RoomShell palette={sceneCfg.palette} window={sceneCfg.window} />
+      <RoomShell
+        palette={sceneCfg.palette}
+        window={sceneCfg.window}
+        elevation={sceneCfg.position[1]}
+      />
       <RoomFurniture layoutStyle={config.layoutStyle} />
 
       {FAN_NAMES.map((n) => (

@@ -27,10 +27,12 @@ export const LIGHT_NAMES = ["Light 1", "Light 2", "Light 3"];
 // room sits at the grid origin; the two front rooms are its +Z and +X grid
 // neighbors, which the iso camera (looking down the +X/+Z diagonal) renders
 // as one room top-center with two rooms flanking it below — the marked
-// reference structure. Front rooms share edges with the back room and meet
-// each other at a corner, exactly like the reference render.
+// reference structure. The back room is RAISED one wall-height (like the
+// reference render): the front rooms' back walls become its pedestal, so its
+// interior stays fully visible instead of hiding behind them. Room3D draws a
+// matching plinth under any elevated room.
 const HALF = ROOM_SIZE / 2;
-const BACK_CENTER = [-HALF, 0, -HALF];
+const BACK_CENTER = [-HALF, WALL_HEIGHT, -HALF]; // raised, screen top-center
 const FRONT_LEFT = [-HALF, 0, HALF]; // +Z neighbor → screen down-left
 const FRONT_RIGHT = [HALF, 0, -HALF]; // +X neighbor → screen down-right
 

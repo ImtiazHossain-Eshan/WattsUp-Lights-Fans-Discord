@@ -29,7 +29,7 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
         <OrthographicCamera
           makeDefault
           position={[8, 14, 8]}
-          zoom={50}
+          zoom={46}
           near={0.1}
           far={100}
         />
@@ -65,7 +65,7 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
 
         <OrbitControls
           makeDefault
-          target={[-0.8, 0.5, -0.8]}
+          target={[-0.8, 1.2, -0.8]}
           enablePan={false}
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2.4}
