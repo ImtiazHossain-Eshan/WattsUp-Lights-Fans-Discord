@@ -12,6 +12,7 @@
  */
 
 const { ROOMS } = require("../data/devices");
+const { getOfficeNow } = require("./clockService");
 
 const OFFICE_START_HOUR = Number.parseInt(process.env.OFFICE_START_HOUR, 10) || 9;
 const OFFICE_END_HOUR = Number.parseInt(process.env.OFFICE_END_HOUR, 10) || 17;
@@ -29,7 +30,7 @@ function formatHour(hour24) {
 
 const OFFICE_HOURS_LABEL = `${formatHour(OFFICE_START_HOUR)}–${formatHour(OFFICE_END_HOUR)}`;
 
-function isAfterHours(now = new Date()) {
+function isAfterHours(now = getOfficeNow()) {
   const hour = now.getHours();
   return hour < OFFICE_START_HOUR || hour >= OFFICE_END_HOUR;
 }
@@ -89,7 +90,7 @@ function buildLongRunningAlerts(devices, now, seenIds) {
   return alerts;
 }
 
-function generateAlerts(devices, now = new Date()) {
+function generateAlerts(devices, now = getOfficeNow()) {
   const seenIds = new Set(); // prevents duplicates within one generation cycle
   const alerts = [
     ...buildAfterHoursAlerts(devices, now, seenIds),

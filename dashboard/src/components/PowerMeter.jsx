@@ -1,3 +1,5 @@
+import { GaugeIcon } from "./Icons.jsx";
+
 // Absolute maxima with every device ON: office 6x60 + 9x15 = 495 W,
 // single room 2x60 + 3x15 = 165 W. Used to scale the meter bars.
 const OFFICE_MAX_W = 495;
@@ -11,7 +13,8 @@ export default function PowerMeter({ usage }) {
   return (
     <div className="panel power-meter">
       <h2>
-        <span>⚡</span> Power meter
+        <GaugeIcon size={15} /> Power breakdown
+        <small>live</small>
       </h2>
 
       <div className="meter-total">
@@ -28,11 +31,11 @@ export default function PowerMeter({ usage }) {
       </div>
 
       <div className="meter-kwh">
-        <span>📅 Estimated usage today</span>
+        <span>Estimated usage today</span>
         <strong>{usage ? `${usage.estimatedTodayKwh} kWh` : "—"}</strong>
       </div>
 
-      <h3 className="meter-subhead">Per-room breakdown</h3>
+      <h3 className="meter-subhead">Per room</h3>
       <ul className="room-bars">
         {(usage?.perRoom ?? []).map((room) => (
           <li key={room.room}>

@@ -6,12 +6,14 @@ const COMMANDS = [
   { cmd: "!help", desc: "Command list" },
 ];
 
+import { BotIcon } from "./Icons.jsx";
+
 /** The Discord bot reads the same backend — this card advertises its commands. */
 export default function BotCommandGuide() {
   return (
     <div className="panel bot-guide">
       <h2>
-        <span>🤖</span> Discord bot
+        <BotIcon size={15} /> Discord bot
         <small>same backend, same live data</small>
       </h2>
       <ul>

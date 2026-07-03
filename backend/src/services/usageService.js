@@ -4,6 +4,7 @@
  */
 
 const { ROOMS } = require("../data/devices");
+const { getOfficeNow } = require("./clockService");
 
 function round2(n) {
   return Math.round(n * 100) / 100;
@@ -28,7 +29,7 @@ function getPerRoomPower(devices) {
   });
 }
 
-function getHoursElapsedToday(now = new Date()) {
+function getHoursElapsedToday(now = getOfficeNow()) {
   const midnight = new Date(now);
   midnight.setHours(0, 0, 0, 0);
   return (now.getTime() - midnight.getTime()) / 3_600_000;
@@ -39,12 +40,12 @@ function getHoursElapsedToday(now = new Date()) {
  * total draw across the hours elapsed today. Documented as a known limitation
  * (a real meter would integrate power over time).
  */
-function getEstimatedTodayKwh(devices, now = new Date()) {
+function getEstimatedTodayKwh(devices, now = getOfficeNow()) {
   return round2((getTotalPower(devices) * getHoursElapsedToday(now)) / 1000);
 }
 
 function getUsageSummary(devices) {
-  const now = new Date();
+  const now = getOfficeNow(); // office clock, so kWh/updatedAt track virtual time
   return {
     totalPowerWatts: getTotalPower(devices),
     devicesOn: getTotalDevicesOn(devices),

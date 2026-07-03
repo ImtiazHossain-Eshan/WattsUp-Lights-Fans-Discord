@@ -16,6 +16,7 @@ const { getRoomSummaries } = require("./services/roomService");
 const { getUsageSummary } = require("./services/usageService");
 const { generateAlerts } = require("./services/alertService");
 const { getSimulationState } = require("./services/simulationState");
+const { getClockState } = require("./services/clockService");
 
 let ioRef = null;
 
@@ -25,6 +26,7 @@ function emitState(target) {
   target.emit("usage:update", getUsageSummary(devices));
   target.emit("alerts:update", generateAlerts(devices));
   target.emit("simulation:update", getSimulationState());
+  target.emit("clock:update", getClockState());
 }
 
 function initSocket(httpServer, corsOrigin) {
