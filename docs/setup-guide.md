@@ -32,9 +32,9 @@ copy .env.example .env        # optional — defaults to http://localhost:5000
 npm run dev
 ```
 
-Open <http://localhost:5173>. You should see the isometric office with the
-**Live** badge green, lights glowing, fans spinning, and device states flipping
-every few seconds **without refreshing**.
+Open <http://localhost:5173>. You should see the 3D isometric office (drag to
+orbit) with the **Live** badge green, lights glowing, fans spinning, and device
+states flipping every few seconds **without refreshing**.
 
 ## 3. Discord bot
 

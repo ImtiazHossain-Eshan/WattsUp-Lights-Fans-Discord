@@ -45,11 +45,11 @@
 - [x] Live total power meter + estimated kWh
 - [x] Per-room power breakdown bars
 - [x] Active alerts panel with severity styles + friendly empty state
-- [x] Visual office layout: lights glow, fans animate — built from React components + CSS 3D (no static image, no Mermaid, no external/paid assets)
-- [x] Cozy isometric cutaway scene: 3 connected rooms (frosted partitions with doorways), warm lighting, dark burgundy/purple background, soft shadows
+- [x] Visual office layout: lights glow, fans spin — rendered with Three.js (react-three-fiber + drei) loading real GLB room models, no Mermaid
+- [x] Cozy isometric scene: 3 rooms in a row (GLB models under an orthographic iso camera, drag-to-orbit), warm lighting, dark burgundy background, soft contact shadows
 - [x] Glassmorphism floating panels, smooth animations, responsive layout
-- [x] Drawing Room furniture: sofa, coffee table, rug, plants + 2 fans + 3 lights
-- [x] Work Rooms furniture: desks, chairs, glowing laptops, cabinet, plant + 2 fans + 3 lights each
+- [x] Drawing Room: furnished GLB room model + 2 fans + 3 lights (fans/lights data-driven; per-room model swappable in `scene3d.config.js`)
+- [x] Work Rooms: furnished GLB room model + 2 fans + 3 lights each (fans/lights data-driven; per-room model swappable in `scene3d.config.js`)
 - [x] Hover tooltip on every device: name, room, status, current power, last changed
 - [x] Connection status indicator; graceful offline banner + auto-reconnect
 

@@ -1,6 +1,10 @@
 /* ============================================================
    WattsUp — cozy isometric office dashboard
-   Pure CSS: no images, no canvas, no external assets.
+   Styles for the header, glassmorphism panels, power meter,
+   alerts, device list, and Three.js scene overlays.
+   NOTE: the 3D office is now rendered with Three.js (see
+   OfficeScene3D.jsx). The CSS-3D isometric scene further down is
+   legacy and no longer mounted.
    ============================================================ */
 
 /* ---------- design tokens ---------- */
@@ -1296,6 +1300,47 @@ body {
   .shell {
     padding: 14px 12px 22px;
   }
+}
+
+/* ---------- three.js scene overlays (drei <Html>) ---------- */
+.room3d-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(20, 8, 18, 0.72);
+  border: 1px solid rgba(255, 190, 120, 0.28);
+  box-shadow: 0 6px 18px rgba(8, 2, 12, 0.5);
+  backdrop-filter: blur(4px);
+  white-space: nowrap;
+  transform: translateY(-6px);
+  pointer-events: none;
+  user-select: none;
+}
+
+.room3d-label-name {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #fbe8d4;
+}
+
+.room3d-label-power {
+  font-size: 10.5px;
+  font-variant-numeric: tabular-nums;
+  color: #ffb877;
+}
+
+.scene3d-loading {
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(20, 8, 18, 0.7);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
 }
 
 /* ---------- accessibility ---------- */

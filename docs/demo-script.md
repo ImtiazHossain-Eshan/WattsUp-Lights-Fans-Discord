@@ -24,9 +24,9 @@ docs/testing-plan.md). Practice once — 3 minutes is short.
 *Screen: diagrams/system-architecture.md, trace the two arrows with the cursor.*
 
 ### 0:50 – 1:40 — Dashboard (the star)
-> "Here's the office as a cutaway isometric scene — Drawing Room, Work Room 1 and 2,
-> each with 2 fans and 3 lights. Lamps glow and cast light pools when ON; fans spin.
-> Watch — a device just flipped, no refresh needed."
+> "Here's the office as a live 3D isometric scene — Drawing Room, Work Room 1 and 2,
+> each with 2 fans and 3 lights. Lamps glow and fans spin when ON, and you can drag to
+> orbit the whole room. Watch — a device just flipped, no refresh needed."
 
 - Hover a fan → tooltip: name, room, status, watts, last changed.
 - Point at the header: total watts, estimated kWh today, devices ON, Live badge.

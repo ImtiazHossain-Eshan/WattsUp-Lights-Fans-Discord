@@ -31,10 +31,11 @@ Office max: 495 W. Only simulated device data exists — **no people data anywhe
 
 ## Features
 
-- 🏠 **Cozy isometric 3D office** built purely with React components + CSS 3D transforms
-  (no images/canvas/paid assets): cutaway walls, frosted partitions with doorways,
-  night windows, furniture per room — lights **glow** with floor light-pools, fans
-  **spin**, all driven by live backend state
+- 🏠 **Cozy isometric 3D office** rendered with **Three.js** (react-three-fiber + drei):
+  real GLB room models under an orthographic iso camera with drag-to-orbit, warm lighting
+  and soft contact shadows — ceiling fans **spin** and pendant lights **glow** (real point
+  lights), all driven by live backend state. Devices are drawn procedurally on top of the
+  models, so every visual stays 100% data-driven
 - 📊 **Live panels**: total power meter, estimated kWh today, per-room bars, all-15-device
   status list, alerts feed — updated via Socket.IO with **no page refresh**
 - 🖱️ **Hover tooltips** on every scene device: name, room, status, watts, last changed
@@ -75,7 +76,7 @@ The backend owns everything.
 | Part | Stack |
 |------|-------|
 | Backend | Node.js, Express 4, Socket.IO 4, CORS, dotenv (in-memory store) |
-| Dashboard | React 18, Vite 5, socket.io-client, axios, hand-written CSS |
+| Dashboard | React 18, Vite 5, Three.js (react-three-fiber + drei), socket.io-client, axios, hand-written CSS |
 | Bot | discord.js 14, axios, dotenv |
 | Diagrams | Markdown/ASCII + recreation guides (draw.io/Excalidraw/Figma/Canva) |
 
@@ -95,12 +96,14 @@ The backend owns everything.
 │       ├── routes/                # health, devices, rooms, usage, alerts
 │       └── utils/roomAliases.js   # "work1" → "Work Room 1"
 ├── dashboard/
+│   ├── public/models/            # GLB room assets (room-iso.glb + props)
 │   └── src/
 │       ├── App.jsx                # state + REST bootstrap + socket wiring
 │       ├── api.js · socket.js     # backend clients
-│       ├── components/            # shell, header, 3D scene, rooms, devices,
-│       │                          # tooltip, panels, meter, alerts, bot guide
-│       └── styles/app.css         # isometric 3D + glassmorphism + animations
+│       ├── components/            # shell, header, Three.js scene (OfficeScene3D +
+│       │                          # Room3D + scene3d.config), panels, meter,
+│       │                          # tooltip, alerts, bot guide
+│       └── styles/app.css         # glassmorphism panels + scene overlays
 ├── bot/bot.js                     # all commands + proactive alert poller
 ├── diagrams/                      # system architecture + hardware schematic
 ├── docs/                          # setup, demo script, validation, API, testing
@@ -159,13 +162,17 @@ alerts are also posted proactively to `ALERT_CHANNEL_ID` (30 s poll, each alert 
 
 ## The 3D dashboard, briefly
 
-The scene is a 720×240 CSS plane tilted with `rotateX(55°) rotateZ(-45°)`. Each room
-renders its floor slice, a cutaway north wall (with night windows), frosted partition
-walls with doorway gaps, and furniture built from a reusable 3-face `Cuboid` component.
-Devices and labels are billboard "sprites" counter-rotated to face the camera; light
-pools lie on the floor plane so they deform correctly with the projection. Every visual
-state (glow, spin, tooltips, watts) is derived from the backend device objects — the
-scene is 100% data-driven, no static imagery.
+The scene is a real Three.js canvas (`react-three-fiber` + `drei`) under an orthographic
+isometric camera with `OrbitControls` (drag to orbit). Each of the three rooms loads a
+GLB model (`public/models/room-iso.glb`), auto-normalized to a common footprint so its
+floor sits at `y=0` regardless of the source model's scale. The live devices — two ceiling
+fans and three pendant lamps per room — are **built procedurally in code**, not baked into
+the model: fans rotate via `useFrame` while ON, lamps switch on an emissive material plus a
+real `pointLight`, and each device forwards react-three-fiber pointer events (with
+`clientX/clientY`) to the shared screen-space tooltip. The room models are decorative; every
+visual state (spin, glow, tooltip, watts) still comes straight from the backend device
+objects, so the scene stays 100% data-driven. Models, per-room rotation and device layout
+are swappable via [`src/components/scene3d.config.js`](dashboard/src/components/scene3d.config.js).
 
 ## Alert rules
 
