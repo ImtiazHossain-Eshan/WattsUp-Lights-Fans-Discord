@@ -1,22 +1,22 @@
-# ⚡ WattsUp — Office Lights & Fans Monitor
+# WattsUp — Office Lights & Fans Monitor
 
 **Real-time web dashboard + Discord bot, powered by one shared backend.**
 
 People in our small office forget to turn off lights and fans. WattsUp makes the
-invisible visible: a cozy isometric live dashboard shows every device in every room,
+invisible visible: a live isometric dashboard shows every device in every room,
 a Discord bot answers "what's on right now?" from anywhere, and an alert engine calls
 out after-hours waste — all fed by a **single backend source of truth**, so both views
 always agree.
 
 ---
 
-## ⚠️ Device-count assumption (PDF contradiction)
+## Device-count assumption (PDF contradiction)
 
 > The PDF contains a device-count inconsistency. It states every room has **2 fans and
 > 3 lights** (= 5 devices × 3 rooms = **15 devices**), but elsewhere says "6 devices
 > per room, 18 devices total". Since the actual fixed device list is 2 fans and 3
 > lights per room, **this implementation uses 15 devices total** (6 fans + 9 lights).
-> No invented sixth device. Also documented in `docs/validation-checklist.md`.
+> No invented sixth device.
 
 ## The office — same devices, different rooms
 
@@ -39,17 +39,17 @@ All room-specific behavior is driven by two small configs — no per-room compon
 no duplicated code:
 
 - **`dashboard/src/components/roomConfigs.js`** — visual identity per room: label,
-  subtitle, purpose (`waiting_area` / `workspace`), furniture list, `layoutStyle`,
-  accent color, description, which furnished room of the low-poly GLB backs it, and
-  where its five devices hang. `OfficeLayout` groups devices by room, loads the
-  matching config and renders one generic `Room3D`/`RoomCard` per room.
-  - *Drawing Room* renders as a **lounge**: sofa, center table, TV dresser, plant,
-    wall frames and a rug — softer and warmer than the work rooms.
-  - *Work Room 1* renders as a **workspace**: desk, chair, PC setup, wall shelves,
-    projector screen and a whiteboard.
-  - *Work Room 2* is a **workspace with a different arrangement**: desks + chairs
-    laid out differently, bookshelf, notice boards, an extra monitor workstation and
-    a filing cabinet.
+  subtitle, purpose (`waiting_area` / `workspace`), furniture `layoutStyle`,
+  accent color, wall/floor palette, description, and where its five devices hang.
+  `OfficeLayout` groups devices by room, loads the matching config and renders one
+  generic `Room3D`/`RoomCard` per room. Rooms are **fully procedural — no 3D model
+  files**; furniture is built from primitives in `RoomFurniture.jsx`.
+  - *Drawing Room* renders as a **lounge**: sofa, coffee table, rug, plants and
+    wall frames — softer and warmer than the work rooms.
+  - *Work Room 1* renders as a **workspace**: desks with glowing monitors, chairs,
+    a whiteboard and a plant.
+  - *Work Room 2* is a **workspace with a different arrangement**: desks + chairs,
+    a bookshelf, a notice board and a filing cabinet.
 - **`backend/src/data/devices.js` (ROOMS)** — semantic identity per room (name,
   description, `type`, `expectedUsage`) plus the **simulation profile** used by the
   weighted simulator (below). Exposed via `/api/rooms`, so the Discord bot sees the
@@ -57,32 +57,34 @@ no duplicated code:
 
 ## Features
 
-- 🏠 **Cozy isometric 3D office** rendered with **Three.js** (react-three-fiber + drei):
-  real GLB room models under an orthographic iso camera with drag-to-orbit, warm lighting
-  and soft contact shadows — ceiling fans **spin** and pendant lights **glow** (real point
-  lights), all driven by live backend state. Devices are drawn procedurally on top of the
-  models, so every visual stays 100% data-driven
-- 🎛️ **Manual + auto control**: every device has a `controlMode` (`auto`/`manual`). The
+- **Isometric 3D office** rendered with **Three.js** (react-three-fiber + drei): a
+  fully procedural low-poly office (no model files) under an orthographic iso camera with
+  drag-to-orbit and soft contact shadows — ceiling fans **spin** and pendant lights
+  **glow** (real point lights), all driven by live backend state, so every visual stays
+  100% data-driven
+- **Manual + auto control**: every device has a `controlMode` (`auto`/`manual`). The
   simulator only touches **auto** devices; **manual** ones are the user's. Flip a device
   with its **physical rocker wall-switch** on the room card or by clicking the fan/light in
   the 3D scene, switch it between Auto/Manual, turn a whole room (or everything) off, reset
   all back to auto, or pause the simulation — all from the dashboard. Controls **write to
   the backend first**; the UI updates from the broadcast, never from local-only state
-- ⏱️ **Office clock** — one global, controllable virtual time (backend `clockService`) that
+- **Office clock** — one global, controllable virtual time (backend `clockService`) that
   every timestamp, alert age and kWh estimate derives from, so cards never disagree. Change
   the **speed** (1× → 1800×), **jump** to a preset or custom time, or **reset** to real
   time: jump to 6 PM and after-hours alerts light up everywhere at once; run at 1800× to
   age a room past the 2-hour limit in seconds
-- 📊 **Live panels**: total power meter, estimated kWh today, per-room bars, per-room
+- **Live panels**: total power meter, estimated kWh today, per-room bars, per-room
   device control cards (rocker switch + Auto/Manual, animated SVG fan/light icons), alerts
   feed — updated via Socket.IO with **no page refresh**
-- 🖱️ **Hover tooltips** on every scene device: name, room, status, watts, mode, last changed
-- 🤖 **Discord bot**: `!status`, `!room <name>`, `!usage`, `!alerts`, `!help` — plus
-  **proactive alert posts** to a channel (30 s poll, deduped by stable alert IDs)
-- 🚨 **Alert engine**: after-hours devices (outside 9 AM–5 PM) and rooms fully ON for 2+ hours
-- 🔁 **Simulator**: toggles one random device every 5 s and rebroadcasts everything —
-  works headless, never invents rooms/devices, never changes wattages
-- 🔌 **One source of truth**: dashboard and bot are pure readers of the same backend
+- **Hover tooltips** on every scene device: name, room, status, watts, mode, last changed
+- **Discord bot**: `!status`, `!room <name>`, `!usage`, `!alerts`, `!simulation`,
+  `!turnoff`, `!help` — plus **proactive alert posts** to a channel (30 s poll, deduped by
+  stable alert IDs)
+- **Alert engine**: after-hours devices (outside 9 AM–5 PM) and rooms fully ON for 2+ hours
+- **Simulator**: nudges one random auto device every 5 s and rebroadcasts everything —
+  works headless, never invents rooms/devices, never changes wattages, never touches a
+  manual device
+- **One source of truth**: dashboard and bot are pure readers of the same backend
 
 ## Architecture
 
@@ -147,15 +149,21 @@ The backend owns everything.
 │       │                          # RoomCard, DeviceControls (rocker switch), DeviceIcon,
 │       │                          # PowerMeter, AlertsPanel, DeviceTooltip
 │       └── styles/app.css         # contemporary dark theme, panels, scene overlays, controls
-├── bot/bot.js                     # all commands + proactive alert poller
+├── bot/
+│   ├── bot.js                     # all commands + proactive alert poller
+│   └── assets/                    # WattsUp bot avatar (SVG source + PNG)
 ├── diagrams/                      # system architecture + hardware schematic
-├── docs/                          # setup, demo script, validation, API, testing
+├── .gitignore
 └── README.md
 ```
 
+Internal working notes (demo/video script, validation & submission checklists, manual
+test plan) are kept **local, not committed** — this README plus `diagrams/` are the
+shipped documentation.
+
 ## Quick start
 
-Prereq: Node.js ≥ 18. Three terminals (backend first). Full guide: [`docs/setup-guide.md`](docs/setup-guide.md)
+Prereq: Node.js ≥ 18. Three terminals (backend first).
 
 ```bash
 # 1 — backend (source of truth)
@@ -164,7 +172,7 @@ cd backend && npm install && npm run dev        # http://localhost:5000
 # 2 — dashboard
 cd dashboard && npm install && npm run dev      # http://localhost:5173
 
-# 3 — Discord bot (needs a token — see docs/setup-guide.md)
+# 3 — Discord bot (needs a token — see "Discord bot" below)
 cd bot && npm install
 copy .env.example .env                          # then fill DISCORD_TOKEN (+ ALERT_CHANNEL_ID)
 npm run dev
@@ -172,7 +180,14 @@ npm run dev
 
 `.env` files are optional for backend/dashboard (sane defaults); the bot requires
 `DISCORD_TOKEN` and needs **MESSAGE CONTENT INTENT** enabled in the Discord Developer
-Portal. All variables are documented in each `\.env.example` and in the setup guide.
+Portal. All variables are documented in each `.env.example` and in the **Discord bot**
+section below.
+
+> **Secrets — never commit these.** Real `.env` files (Discord bot token, channel ID,
+> any keys) are git-ignored (`.gitignore` → `.env`); only the placeholder
+> `*.env.example` files are tracked. Never paste a real token into the repo, a commit,
+> an issue or a screenshot. If a token is ever exposed, rotate it immediately: Discord
+> Developer Portal → your app → **Bot → Reset Token**, then update your local `bot/.env`.
 
 ## API
 
@@ -202,8 +217,6 @@ and rebroadcasts over Socket.IO, so every client updates immediately.
 | `/api/rooms/:roomName/all-off` | turn one room off + pin to `manual` |
 | `/api/simulation` | `{enabled}` — enable/disable the simulator |
 | `/api/clock` | `{time?, speed?, reset?}` — set the office time/speed, or reset to real time |
-
-Examples with full payloads: [`docs/api-reference.md`](docs/api-reference.md)
 
 **Socket.IO events** (full snapshot on connect, then after every simulator tick, manual
 control change **and clock change**):
@@ -328,12 +341,16 @@ rebroadcast, so the dashboard and Discord bot always agree.
 
 ## Testing & demo
 
-- Manual test plan (backend, API, simulator, dashboard, sockets, bot, alerts, invalid
-  input): [`docs/testing-plan.md`](docs/testing-plan.md)
-- To force alerts during a daytime demo: `OFFICE_START_HOUR=24` (after-hours) and
-  `LONG_RUNNING_HOURS=0.01` (long-running) in `backend/.env`
-- 3-minute demo script with timestamps: [`docs/demo-script.md`](docs/demo-script.md)
-- Requirement-by-requirement checklist: [`docs/validation-checklist.md`](docs/validation-checklist.md)
+- **Smoke test the backend:** `curl http://localhost:5000/api/health`, then `/api/devices`,
+  `/api/rooms/work1`, `/api/usage`, `/api/alerts` — every value the dashboard and bot show
+  comes from these.
+- **Live check:** toggle a device on the dashboard and confirm the bot's `!status` reflects
+  it (shared backend); watch the office update with no page refresh.
+- **Force alerts on demand:** use the dashboard time controls — jump to 6 PM (after-hours)
+  or run at 1800× to age a room past 2 h. The env vars `OFFICE_START_HOUR=24` and
+  `LONG_RUNNING_HOURS=0.01` in `backend/.env` still work too.
+- A 3-minute demo walkthrough and detailed test/validation notes are kept in the team's
+  local working docs (not committed).
 
 ## Hardware (concept only)
 
@@ -362,4 +379,4 @@ fuses; GPIOs never switch mains): [`diagrams/hardware-schematic.md`](diagrams/ha
 ---
 
 *Hackathon preliminary-round submission. Simulated data only — no real electrical
-equipment was harmed in the making of this dashboard.* ⚡
+equipment was harmed in the making of this dashboard.*
