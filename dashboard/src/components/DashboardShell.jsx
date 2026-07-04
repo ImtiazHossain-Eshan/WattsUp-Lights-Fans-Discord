@@ -7,6 +7,7 @@ import RoomCard from "./RoomCard.jsx";
 import PowerMeter from "./PowerMeter.jsx";
 import AlertsPanel from "./AlertsPanel.jsx";
 import BotCommandGuide from "./BotCommandGuide.jsx";
+import SystemDiagram from "./SystemDiagram.jsx";
 import DeviceTooltip from "./DeviceTooltip.jsx";
 import { AlertTriangleIcon } from "./Icons.jsx";
 import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
@@ -127,6 +128,13 @@ export default function DashboardShell({
       </section>
 
       <BotCommandGuide />
+
+      <SystemDiagram
+        devices={devices}
+        alerts={alerts}
+        simulation={simulation}
+        connected={connected}
+      />
 
       <footer className="footer">
         <span>

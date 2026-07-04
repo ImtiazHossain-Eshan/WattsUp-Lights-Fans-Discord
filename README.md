@@ -111,6 +111,17 @@ Full diagram + draw.io/Excalidraw recreation guide: [`diagrams/system-architectu
 The dashboard never generates device state. The bot never generates device state.
 The backend owns everything.
 
+This architecture uses a single backend as the source of truth. The simulated device layer
+updates the backend device store. The backend calculates power usage and alerts, then sends
+live updates to the React dashboard through Socket.IO. The Discord bot also reads from the
+same backend through REST APIs, so bot responses and dashboard values always match. Manual
+controls from the dashboard update the backend first, and the backend broadcasts the updated
+state to all clients.
+
+The same diagram is also a **live interactive feature inside the dashboard** (the "System
+architecture" section): hover any block to trace its flows, click for details, with data
+pulses animating along the connectors and a few blocks showing live backend numbers.
+
 ## Tech stack
 
 | Part | Stack |

@@ -1,116 +1,138 @@
-# System Architecture Diagram
+# Smart Office Energy Monitor — System Architecture
 
-High-level architecture of WattsUp. **No Mermaid is used** (per the problem statement) —
-below is (1) an ASCII rendering you can read directly in GitHub, and (2) an exact
-box/arrow inventory so the same diagram can be recreated in draw.io, Excalidraw, Figma
-or Canva in a few minutes.
+High-level architecture for WattsUp. **No Mermaid** (per the problem statement). This file
+gives you (1) an ASCII overview you can read in GitHub, (2) an exact block + arrow plan to
+recreate the diagram in draw.io / Excalidraw / Figma / Canva / PowerPoint, (3) a README
+explanation paragraph, and (4) a coverage checklist.
 
-## 1. ASCII diagram
+> The same diagram is also a **live, interactive feature inside the dashboard** — see the
+> "System architecture" section at the bottom of the web app (hover a block to trace its
+> flows, click for details; data pulses animate along the connectors).
+
+## 1. ASCII overview (left → right)
 
 ```
-+---------------------+        +------------------------------+
-|  OFFICE LIGHTS &    |        |   SIMULATED DEVICE LAYER     |
-|  FANS               | ~~~~~> |   backend/src/services/      |
-|  (physical devices, |  rep-  |   simulator.js               |
-|  simulated only —   | resen- |   toggles 1 random device    |
-|  no real hardware)  |  ted   |   every 5 seconds            |
-+---------------------+   by   +---------------+--------------+
-                                               | mutates state
-                                               v
-             +---------------------------------------------------------+
-             |            BACKEND API SERVER  (source of truth)        |
-             |            Node.js + Express — http://localhost:5000    |
-             |                                                         |
-             |  +---------------------------------------------------+  |
-             |  |  DEVICE STATE STORE (in-memory, 15 devices:       |  |
-             |  |  3 rooms x [2 fans @60W + 3 lights @15W])         |  |
-             |  +------------+------------------+-------------------+  |
-             |               |                  |                      |
-             |  +------------v-----+  +---------v--------+             |
-             |  | USAGE CALCULATOR |  |   ALERT ENGINE   |             |
-             |  | totals, per-room |  | after-hours +    |             |
-             |  | W, est. kWh      |  | long-running     |             |
-             |  +------------+-----+  +---------+--------+             |
-             |               |                  |                      |
-             |  +------------v------------------v-------------------+  |
-             |  |   REST API              |  SOCKET.IO BROADCASTER  |  |
-             |  |   GET /api/health       |  devices:update         |  |
-             |  |   GET /api/devices      |  rooms:update           |  |
-             |  |   GET /api/rooms        |  usage:update           |  |
-             |  |   GET /api/rooms/:name  |  alerts:update          |  |
-             |  |   GET /api/usage        |                         |  |
-             |  |   GET /api/alerts       |                         |  |
-             |  +------------+------------+------------+------------+  |
-             +---------------|-------------------------|--------------+
-                             | REST (axios,            | Socket.IO push
-                             | poll + on-demand)       | (live, no refresh)
-                             v                         v
-                  +-------------------+      +----------------------+
-                  |   DISCORD BOT     |      |   REACT DASHBOARD    |
-                  |   bot/bot.js      |      |   Vite + React       |
-                  |   discord.js      |      |   localhost:5173     |
-                  |   !status !room   |      |   cozy isometric 3D  |
-                  |   !usage !alerts  |      |   office, glowing    |
-                  |   + proactive     |      |   lights, spinning   |
-                  |   alert posts     |      |   fans, live panels  |
-                  +---------+---------+      +----------+-----------+
-                            |                           |
-                            v                           v
-                  +-------------------+      +----------------------+
-                  |  DISCORD CHANNEL  |      |      BROWSER         |
-                  +---------+---------+      +----------+-----------+
-                            |                           |
-                            +------------+--------------+
-                                         v
-                                 +---------------+
-                                 |  USER / BOSS  |
-                                 +---------------+
+   SOURCES (left)                 BACKEND — single source of truth (center)                CLIENTS (right)
+ ┌──────────────────┐    ┌──────────────────────────────────────────────────────┐   ┌─────────────────────┐
+ │  Office Rooms    │    │  BACKEND API SERVER   Node.js · Express · Socket.IO    │   │  React Web Dashboard│
+ │  Drawing Room    │    │                                                        │   │  live 3D office,    │
+ │  Work Room 1     │    │   ┌───────────────┐        ┌────────────────────────┐  │   │  status, power,     │
+ │  Work Room 2     │    │   │ Simulator Svc │──tog──▶ │ In-memory Device State │  │   │  alerts, controls   │
+ │  2 fans+3 lights │    │   └───────────────┘        │ Store (15 devices)     │  │   └─────────┬───────────┘
+ └────────┬─────────┘    │   ┌───────────────┐        │ status·wattage·power   │  │      ▲     │  PATCH
+          │ on/off       │   │ Manual Control│──PATCH▶ │ room·lastChanged·      │  │ live │     │  toggle/
+          ▼              │   │ API           │        │ turnedOnAt·controlMode │  │ push │     ▼  state/mode
+ ┌──────────────────┐    │   └───────────────┘        └───────────┬────────────┘  │   ┌─────────────────────┐
+ │ Simulated Device │    │        derive ┌──────────────┬─────────┼───────────┐   │   │   Discord Bot       │
+ │ Layer            │──▶ │               ▼              ▼         ▼           │   │   │   discord.js        │
+ │ ON/OFF, power,   │upd │        ┌───────────┐  ┌───────────┐ ┌───────────┐  │   │   │  !status !room      │
+ │ timestamps, 15   │    │        │  Usage    │  │  Alert    │ │  Room     │  │   │   │  !usage !alerts     │
+ │ devices          │    │        │ Calculator│  │  Engine   │ │  Summary  │  │   │   │  !help  !simulation │
+ └──────────────────┘    │        └─────┬─────┘  └────┬──────┘ └─────┬─────┘  │   │   └───┬───────────▲─────┘
+                         │              └─────────────┴──────────────┘        │   │       │ REST      │ proactive
+ ┌──────────────────┐    │        ┌───────────────┐        ┌──────────────┐   │   │       │ requests  │ alerts
+ │ Hardware concept │    │        │  REST API     │        │  Socket.IO   │───┼───┼───────┘           │
+ │ ESP32+switch+LED │    │        │  /api/...     │◀──────▶│ Broadcaster  │   │   │  REST responses   │
+ │ (future, 1 room) │    │        └──────┬────────┘        └──────────────┘   │   └───────────────────┘
+ └──────────────────┘    └───────────────┼──────────────────────────────────┘             │
+                                         │  reads / controls                               ▼
+                                         └──────────────────────────────────▶  ┌─────────────────────┐
+                                                                                │    User / Boss      │
+                                     opens dashboard · sends commands · gets ───│  watches · commands │
+                                                        alerts                  └─────────────────────┘
 ```
 
-## 2. Data flows (the two paths the PDF requires)
+Two required data paths, one backend:
 
-1. **Live dashboard path:**
-   `Device state → simulated data (simulator.js) → backend store → Socket.IO broadcaster → React dashboard (live, no refresh)`
-2. **Discord path:**
-   `Device state → simulated data (simulator.js) → backend store → REST API → Discord bot → Discord message → User/Boss`
+- **Live path:** Simulated Device Layer → Backend API → Socket.IO → **Web Dashboard**
+- **Bot path:** Simulated Device Layer → Backend API → REST → **Discord Bot** → User
 
-Neither client ever generates device state — both read the same backend, which is why
-they always agree.
+Neither client stores or invents device state — both read the same backend, so they always
+match.
 
-## 3. Recreate it in draw.io / Excalidraw / Figma / Canva
+## 2. Blocks to draw (12)
 
-**Boxes (12):**
+| # | Block (label) | Group / color | Key text (keep it short) |
+|---|---------------|---------------|--------------------------|
+| 1 | **Office Rooms** | Devices (teal) | Drawing Room · Work Room 1 · Work Room 2 — 2 fans + 3 lights each (15 total) |
+| 2 | **Simulated Device Layer** | Devices (teal) | ON/OFF states · power draw · timestamps · 15 devices |
+| 3 | **Backend API Server** (large container) | Backend core (accent) | Node.js + Express + Socket.IO — single source of truth |
+| 4 | **In-memory Device State Store** | Backend core | status · wattage · currentPower · room · lastChanged · turnedOnAt · controlMode |
+| 5 | **Usage Calculator** | Backend core (info) | total power · per-room power · estimated kWh |
+| 6 | **Alert Engine** | Alerts (amber) | after-hours · long-running room · timestamped |
+| 7 | **REST API** | Backend core | GET /api/devices · /rooms · /usage · /alerts · PATCH /api/devices/:id/toggle |
+| 8 | **Socket.IO Broadcaster** | Backend core (info) | devices/rooms/usage/alerts/simulation:update |
+| 9 | **React Web Dashboard** | Frontend (blue) | live 3D office · status panel · power meter · alerts · manual + simulation controls |
+| 10 | **Discord Bot** | Bot (cyan) | discord.js — !status · !room · !usage · !alerts · !help (+!simulation, !turnoff) |
+| 11 | **User / Boss** | User (slate) | opens dashboard · sends commands · controls devices · receives alerts |
+| 12 | **Representative Hardware Circuit** (side note, dashed) | Future (gray) | ESP32 + switches + LEDs, one-room concept — real AC loads need relays / current sensors |
 
-| # | Box label | Suggested color |
-|---|-----------|-----------------|
-| 1 | Office lights & fans (simulated) | gray |
-| 2 | Simulated Device Layer — simulator.js, toggles 1 device / 5 s | orange |
-| 3 | Backend API Server — Node.js + Express :5000 (large container) | blue outline |
-| 4 | Device State Store — 15 devices, in-memory (inside 3) | blue |
-| 5 | Usage Calculator (inside 3) | blue |
-| 6 | Alert Engine (inside 3) | blue |
-| 7 | REST API — 6 GET endpoints (inside 3) | teal |
-| 8 | Socket.IO Broadcaster — 4 events (inside 3) | teal |
-| 9 | React Dashboard — Vite :5173, isometric 3D office | purple |
-| 10 | Discord Bot — discord.js, 5 commands + proactive alerts | purple |
-| 11 | Discord Channel | gray |
-| 12 | User / Boss | green |
+Also show, inside/around the backend container: **Simulator Service**, **Room Summary
+Service**, and **Manual Control API** (all backend-core boxes).
 
-**Arrows (11):**
+## 3. Arrows / flows to draw (labeled)
 
-| From → To | Label |
-|-----------|-------|
-| 1 → 2 | represented by |
-| 2 → 4 | mutates device state every 5 s |
-| 4 → 5 | reads devices |
-| 4 → 6 | reads devices |
-| 5 → 7 and 5 → 8 | usage summary |
-| 6 → 7 and 6 → 8 | active alerts |
-| 8 → 9 | Socket.IO push: devices/rooms/usage/alerts:update |
-| 7 → 10 | REST: /rooms /usage /alerts (axios, 30 s alert poll) |
-| 10 → 11 | command replies + proactive alert posts |
-| 9 → 12 and 11 → 12 | user watches dashboard / reads Discord |
+| Flow | From → To | Arrow label |
+|------|-----------|-------------|
+| A. Device simulation | Office Rooms → Simulated Device Layer → Backend → Device State Store | updates device state |
+| B. Backend internal | Device State Store → Usage Calculator, → Alert Engine, → Room Summary Service; Simulator Service → State Store | derive · toggle |
+| C. Dashboard real-time | Socket.IO Broadcaster → React Web Dashboard | **Live updates, no manual refresh** |
+| D. Dashboard control | React Web Dashboard → Manual Control API → Device State Store | PATCH toggle/state/mode |
+| E. Discord commands | Discord Bot → REST API → State Store; REST API → Discord Bot → user | !status, !room, !usage, !alerts |
+| F. Proactive alerts | Alert Engine → Discord Bot → Alert Channel | proactive alert messages |
+| G. User interaction | User/Boss → Web Dashboard; User/Boss → Discord Bot | opens · commands |
 
-Layout hint: place 1→2 top-left, the big backend container center, dashboard bottom-right,
-bot bottom-left, user centered at the bottom. Keep the four inner boxes (store, usage,
-alerts, REST/Socket row) inside the backend container to emphasize "one source of truth".
+## 4. Layout & styling (for draw.io / Figma / Canva)
+
+**Left-to-right, three bands.** Neutral background, grouped boxes, labeled arrows.
+
+- **Left column** — Office Rooms (top), Simulated Device Layer (middle), ESP32 hardware
+  concept (bottom, dashed "future").
+- **Center** — one large **Backend API Server** container (the biggest box). Inside it:
+  Device State Store (prominent, top), then Simulator Service, Usage Calculator, Alert
+  Engine, Room Summary Service, REST API, Socket.IO Broadcaster, Manual Control API.
+- **Right column** — React Web Dashboard (top), Discord Bot (middle), User/Boss (bottom).
+
+**Colors — one per layer** (professional, not neon):
+
+| Layer | Suggested color |
+|-------|-----------------|
+| Devices / simulation | teal / green |
+| Backend core | slate with a single accent for the container + store |
+| Dashboard / frontend | blue |
+| Discord bot | cyan (Discord-ish, avoid purple) |
+| Alerts | amber / red |
+| User & hardware | neutral gray (hardware dashed) |
+
+Keep box text short (a label + 3–5 bullets), arrows labeled, no childish icons, no
+purple/neon. Emphasize the two flows that leave the backend to the two clients — that is the
+"one shared backend" story.
+
+## 5. README explanation paragraph
+
+> This architecture uses a single backend as the source of truth. The simulated device layer
+> updates the backend device store. The backend calculates power usage and alerts, then sends
+> live updates to the React dashboard through Socket.IO. The Discord bot also reads from the
+> same backend through REST APIs, so bot responses and dashboard values always match. Manual
+> controls from the dashboard update the backend first, and the backend broadcasts the updated
+> state to all clients.
+
+## 6. Coverage checklist
+
+The diagram (and the in-dashboard interactive version) shows:
+
+- [x] Devices (Office Rooms — 15 devices, 6 fans + 9 lights)
+- [x] Simulated device layer
+- [x] Backend API server
+- [x] In-memory device state store
+- [x] Usage calculator
+- [x] Alert engine
+- [x] REST API
+- [x] Socket.IO real-time broadcaster
+- [x] React web dashboard
+- [x] Discord bot
+- [x] User / boss
+- [x] Shared backend / single source of truth (both clients read one backend)
+- [x] Manual control path (Dashboard → Manual Control API → State Store)
+- [x] Proactive alert path (Alert Engine → Discord Bot → alert channel)
+- [x] Representative hardware concept (ESP32, one room) — where real sensing would connect

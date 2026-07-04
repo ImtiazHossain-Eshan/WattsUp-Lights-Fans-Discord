@@ -1962,3 +1962,324 @@ body::before {
     justify-content: flex-start;
   }
 }
+
+/* ============================================================
+   System architecture diagram (interactive)
+   ============================================================ */
+.sysdiagram h2 {
+  justify-content: flex-start;
+}
+
+.sysdiagram-toggle {
+  margin-left: auto;
+}
+
+.sysdiagram-lead {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text-2);
+  max-width: 90ch;
+  margin: 0 0 14px;
+}
+
+.sysdiagram-stage {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(120% 120% at 50% -10%, rgba(244, 65, 116, 0.05), transparent 60%),
+    #08080a;
+  padding: 8px;
+}
+
+.sysdiagram-svg {
+  display: block;
+  width: 100%;
+  min-width: 940px;
+  height: auto;
+}
+
+/* per-layer accent colors (professional, no purple/neon) */
+.sd-node--device { --c: #2dd4bf; }
+.sd-node--backend { --c: #93a1b5; }
+.sd-node--store { --c: var(--brand); }
+.sd-node--info { --c: #38bdf8; }
+.sd-node--alert { --c: var(--warn); }
+.sd-node--frontend { --c: #60a5fa; }
+.sd-node--bot { --c: #22d3ee; }
+.sd-node--user { --c: #9aa4b2; }
+.sd-node--future { --c: #6b7280; }
+
+/* ---- backend container ---- */
+.sd-container-box {
+  fill: rgba(244, 65, 116, 0.04);
+  stroke: rgba(244, 65, 116, 0.4);
+  stroke-width: 1.4;
+  stroke-dasharray: 3 5;
+}
+
+.sd-container-title {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+}
+
+.sd-container-sub {
+  fill: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-mono);
+}
+
+/* ---- nodes (foreignObject cards) ---- */
+.sd-node-fo {
+  overflow: visible;
+  transition: opacity 0.25s ease;
+}
+
+.sd-node-fo.is-dim {
+  opacity: 0.32;
+}
+
+.sd-node {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-medium);
+  border-left: 3px solid var(--c);
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  font-family: var(--font-mono);
+}
+
+.sd-node:hover,
+.sd-node-fo.is-hot .sd-node {
+  border-color: var(--c);
+  box-shadow: 0 0 0 1px var(--c), 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.sd-node.is-sel {
+  border-color: var(--c);
+  box-shadow: 0 0 0 2px var(--c);
+}
+
+.sd-node-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.sd-node-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
+}
+
+.sd-node-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.15;
+}
+
+.sd-node-live {
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  padding: 1px 6px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.sd-node-sub {
+  font-size: 10.5px;
+  color: var(--text-2);
+  line-height: 1.3;
+}
+
+.sd-node--future .sd-node {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---- edges ---- */
+.sd-edge--device { --e: #2dd4bf; }
+.sd-edge--ok { --e: var(--ok); }
+.sd-edge--info { --e: #60a5fa; }
+.sd-edge--bot { --e: #22d3ee; }
+.sd-edge--alert { --e: var(--warn); }
+.sd-edge--user { --e: #9aa4b2; }
+.sd-edge--muted { --e: #4a4a52; }
+
+.sd-edge-path {
+  fill: none;
+  stroke: var(--e);
+  stroke-width: 1.6;
+  opacity: 0.55;
+  transition: opacity 0.25s ease, stroke-width 0.25s ease;
+}
+
+.sd-edge--muted .sd-edge-path {
+  stroke-dasharray: 4 4;
+  opacity: 0.4;
+}
+
+.sd-flow {
+  fill: var(--e);
+  filter: drop-shadow(0 0 4px var(--e));
+}
+
+/* edge labels (top layer, chip background so they read over node cards) */
+.sd-label {
+  transition: opacity 0.25s ease;
+}
+
+.sd-label-bg {
+  fill: #0c0c0f;
+  stroke: var(--border-medium);
+  stroke-width: 1;
+}
+
+.sd-edge-label {
+  fill: var(--text-2);
+  font-size: 10px;
+  font-family: var(--font-mono);
+}
+
+/* hover emphasis / dimming */
+.sysdiagram-svg.has-active .sd-edge:not(.is-hot) .sd-edge-path,
+.sysdiagram-svg.has-active .sd-edge:not(.is-hot) .sd-flow,
+.sysdiagram-svg.has-active .sd-label:not(.is-hot) {
+  opacity: 0.12;
+}
+
+.sd-edge.is-hot .sd-edge-path {
+  opacity: 1;
+  stroke-width: 2.4;
+}
+.sd-label.is-hot .sd-label-bg {
+  stroke: var(--e);
+}
+.sd-label.is-hot .sd-edge-label {
+  fill: var(--text);
+}
+
+/* ---- footer: legend + detail ---- */
+.sysdiagram-footer {
+  display: grid;
+  grid-template-columns: 1fr minmax(240px, 340px);
+  gap: 16px;
+  margin-top: 14px;
+  align-items: start;
+}
+
+.sysdiagram-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-content: flex-start;
+}
+
+.sd-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.sd-key i {
+  width: 11px;
+  height: 11px;
+  border-radius: 3px;
+  background: var(--k);
+}
+
+.sd-key--device { --k: #2dd4bf; }
+.sd-key--backend { --k: #93a1b5; }
+.sd-key--info { --k: #38bdf8; }
+.sd-key--alert { --k: var(--warn); }
+.sd-key--frontend { --k: #60a5fa; }
+.sd-key--bot { --k: #22d3ee; }
+.sd-key--future { --k: #6b7280; }
+.sd-key--future i { border: 1px dashed #9aa4b2; background: transparent; }
+
+.sysdiagram-detail {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  min-height: 92px;
+}
+
+.sysdiagram-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.sysdiagram-detail-head .sd-node-dot {
+  width: 9px;
+  height: 9px;
+}
+
+.sysdiagram-detail-head strong {
+  font-size: 13px;
+}
+
+.sysdiagram-detail-grp {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sysdiagram-detail p {
+  font-size: 12px;
+  color: var(--text-2);
+  margin: 0;
+}
+
+.sysdiagram-detail ul {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.sysdiagram-detail li {
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.sysdiagram-detail-hint {
+  color: var(--muted);
+  font-style: italic;
+}
+
+@media (max-width: 900px) {
+  .sysdiagram-footer {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sd-flow {
+    display: none;
+  }
+}
