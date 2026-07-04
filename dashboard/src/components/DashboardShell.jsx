@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import HeaderSummary from "./HeaderSummary.jsx";
 import ControlBar from "./ControlBar.jsx";
 import TimeControl from "./TimeControl.jsx";
@@ -10,6 +10,7 @@ import BotCommandGuide from "./BotCommandGuide.jsx";
 import DeviceTooltip from "./DeviceTooltip.jsx";
 import { AlertTriangleIcon } from "./Icons.jsx";
 import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
+import { setTooltip } from "../tooltipStore.js";
 
 /**
  * Page frame. Layout (top → bottom): header stats · banners · the office scene
@@ -32,10 +33,9 @@ export default function DashboardShell({
   actionError,
   actions,
 }) {
-  // One shared tooltip rendered in screen space (outside the 3D canvas)
-  // so text stays crisp: { device, x, y } | null
-  const [tooltip, setTooltip] = useState(null);
-
+  // Hover state lives in tooltipStore, NOT in this component's state — so the
+  // constant pointer-move events from the 3D scene re-render only <DeviceTooltip>,
+  // never the whole dashboard (that storm was the "text flicker" on toggle).
   const handleDeviceHover = useCallback((device, event) => {
     if (!device || !event) {
       setTooltip(null);
@@ -133,7 +133,7 @@ export default function DashboardShell({
         </span>
       </footer>
 
-      <DeviceTooltip tooltip={tooltip} />
+      <DeviceTooltip />
     </div>
   );
 }

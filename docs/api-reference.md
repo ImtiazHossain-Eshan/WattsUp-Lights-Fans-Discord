@@ -190,12 +190,40 @@ Enable or disable the simulator. Body: `{"enabled":true|false}`. Returns the sam
 shape as the GET. While disabled, devices only change through manual control; while
 enabled, one random **auto** device is toggled every `intervalMs`. Invalid body → **400**.
 
+## GET /api/clock
+
+The virtual **office clock** every timestamp, alert and kWh estimate is derived from.
+
+```json
+{
+  "officeTime": "2026-07-04T18:00:00.000Z",
+  "speed": 60,
+  "isRealTime": false,
+  "realTime": "2026-07-04T09:14:22.001Z"
+}
+```
+
+`officeNow = anchorVirtual + (realNow − anchorReal) × speed`. `isRealTime` is true when
+speed is 1× and the office time is within ~2 s of real time.
+
+## PATCH /api/clock
+
+Change the office clock. Body accepts any of:
+
+- `{"time":"18:00"}` — set the time of day (`HH:mm` or `HH:mm:ss`; keeps the current date)
+  or any full date string `Date.parse` accepts.
+- `{"speed":60}` — run virtual time faster (0–3600×; `0` freezes it).
+- `{"reset":true}` — snap back to real time at 1×.
+
+Returns the same shape as the GET. Because a time change can flip after-hours /
+long-running conditions, the backend rebroadcasts **everything**. Empty/invalid body → **400**.
+
 ## Socket.IO events (server → client)
 
 Connect to the base URL with socket.io-client. On connection the server immediately
 emits a full snapshot; afterwards all events are re-emitted after every simulator tick
-(~5 s) **and after every manual control change** (`PATCH`), so the dashboard reflects
-manual actions instantly.
+(~5 s) **and after every manual control or clock change** (`PATCH`), so the dashboard
+reflects actions instantly.
 
 | Event | Payload |
 |-------|---------|
@@ -204,3 +232,4 @@ manual actions instantly.
 | `usage:update` | usage summary object |
 | `alerts:update` | array of active alerts |
 | `simulation:update` | simulation state (`enabled`, `intervalMs`, auto/manual counts) |
+| `clock:update` | office clock (`officeTime`, `speed`, `isRealTime`, `realTime`) |
