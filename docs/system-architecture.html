@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1640px; height: 960px; }
+  body {
+    background:
+      radial-gradient(1300px 620px at 50% -12%, rgba(244,65,116,0.10), transparent 60%),
+      radial-gradient(900px 700px at 94% 40%, rgba(14,165,233,0.06), transparent 62%),
+      #08080b;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    overflow: hidden;
+  }
+  svg { display: block; }
+  .mono { font-family: 'Cascadia Code', 'Consolas', monospace; }
+</style>
+</head>
+<body>
+<svg width="1640" height="960" viewBox="0 0 1640 960" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="arw" markerWidth="12" markerHeight="12" refX="8" refY="5" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M1,1 L10,5 L1,9 z" fill="context-stroke"/>
+    </marker>
+    <marker id="arw-s" markerWidth="12" markerHeight="12" refX="3" refY="5" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M1,1 L10,5 L1,9 z" fill="context-stroke"/>
+    </marker>
+    <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#f44174" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#f44174" stop-opacity="0.02"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ===== title ===== -->
+  <text x="60" y="58" fill="#ededed" font-size="30" font-weight="700">WattsUp — System Architecture</text>
+  <text x="60" y="90" fill="#f44174" font-size="16" class="mono">Simulated Device Layer  →  Backend API (single source of truth)  →  Web Dashboard + Discord Bot  →  User</text>
+  <line x1="60" y1="106" x2="1580" y2="106" stroke="#1e1e26" stroke-width="1.5"/>
+
+  <!-- ===== NODE: Simulated Device Layer ===== -->
+  <g>
+    <rect x="60" y="248" width="300" height="188" rx="14" fill="#141419" stroke="#2dd4bf" stroke-opacity="0.55"/>
+    <rect x="60" y="248" width="5" height="188" rx="2.5" fill="#2dd4bf"/>
+    <circle cx="86" cy="282" r="5" fill="#2dd4bf"/>
+    <text x="102" y="287" fill="#ededed" font-size="18" font-weight="700">Simulated Device Layer</text>
+    <text x="82" y="312" fill="#8a8a93" font-size="12.5" class="mono">dynamic dummy data · 15 devices</text>
+    <line x1="82" y1="326" x2="338" y2="326" stroke="#22222a"/>
+    <text x="82" y="352" fill="#c9c9d0" font-size="13.5">3 rooms × (2 fans + 3 lights)</text>
+    <text x="82" y="376" fill="#c9c9d0" font-size="13.5">per device: status · watts · room</text>
+    <text x="82" y="400" fill="#c9c9d0" font-size="13.5">last-changed timestamp</text>
+    <text x="82" y="424" fill="#8fded2" font-size="13" class="mono">changes over time (simulator)</text>
+  </g>
+
+  <!-- ===== NODE: Hardware Concept ===== -->
+  <g>
+    <rect x="60" y="520" width="300" height="150" rx="14" fill="#101014" stroke="#4a4a52" stroke-dasharray="5 5"/>
+    <circle cx="86" cy="552" r="5" fill="#6b7280"/>
+    <text x="102" y="557" fill="#d6d6db" font-size="16" font-weight="700">Hardware Concept · ESP32</text>
+    <text x="82" y="580" fill="#7c7c85" font-size="12" class="mono">real-world equivalent (no HW needed)</text>
+    <line x1="82" y1="592" x2="338" y2="592" stroke="#1e1e26"/>
+    <text x="82" y="616" fill="#b3b3ba" font-size="13">wall switches → GPIO inputs</text>
+    <text x="82" y="638" fill="#b3b3ba" font-size="13">LEDs = devices · ACS712 = current</text>
+    <text x="82" y="660" fill="#b3b3ba" font-size="13">one representative room (Wokwi)</text>
+  </g>
+
+  <!-- ===== NODE: Backend (center, source of truth) ===== -->
+  <g>
+    <rect x="470" y="200" width="520" height="516" rx="18" fill="url(#beam)" stroke="#f44174" stroke-opacity="0.55" stroke-width="1.6"/>
+    <rect x="470" y="200" width="520" height="516" rx="18" fill="#131319" fill-opacity="0.5" stroke="none"/>
+    <circle cx="504" cy="244" r="6" fill="#f44174"/>
+    <text x="522" y="250" fill="#ffffff" font-size="22" font-weight="700">Backend API Server</text>
+    <text x="502" y="278" fill="#9a9aa5" font-size="13.5" class="mono">Node.js · Express · Socket.IO</text>
+    <rect x="742" y="228" width="226" height="28" rx="14" fill="#3d0e1f" stroke="#f44174" stroke-opacity="0.6"/>
+    <text x="855" y="247" fill="#ffb0c7" font-size="12.5" font-weight="700" text-anchor="middle" class="mono">SINGLE SOURCE OF TRUTH</text>
+
+    <line x1="500" y1="300" x2="960" y2="300" stroke="#2a2a33"/>
+
+    <!-- responsibilities -->
+    <g font-size="14.5" fill="#dcdce2">
+      <circle cx="508" cy="336" r="3.5" fill="#f44174"/><text x="524" y="341">Device State Store — owns all 15 device states in memory</text>
+      <circle cx="508" cy="376" r="3.5" fill="#f44174"/><text x="524" y="381">Usage Calculator — total &amp; per-room power (W) + kWh today</text>
+      <circle cx="508" cy="416" r="3.5" fill="#f44174"/><text x="524" y="421">Alert Engine — after-hours (9–5) &amp; rooms ON &gt; 2 h</text>
+      <circle cx="508" cy="456" r="3.5" fill="#f44174"/><text x="524" y="461">Simulator Service — drives the dynamic device data</text>
+    </g>
+
+    <line x1="500" y1="492" x2="960" y2="492" stroke="#2a2a33"/>
+    <text x="500" y="520" fill="#8a8a93" font-size="12.5" class="mono">TWO OUTPUT CHANNELS — one shared state, two synced clients</text>
+
+    <!-- output channel chips -->
+    <g>
+      <rect x="500" y="536" width="220" height="70" rx="12" fill="#0f1622" stroke="#60a5fa" stroke-opacity="0.5"/>
+      <text x="518" y="566" fill="#a9c7f5" font-size="15" font-weight="700">Socket.IO Broadcaster</text>
+      <text x="518" y="590" fill="#8f9bb0" font-size="12.5" class="mono">real-time push → dashboard</text>
+
+      <rect x="740" y="536" width="220" height="70" rx="12" fill="#0d1a1d" stroke="#22d3ee" stroke-opacity="0.5"/>
+      <text x="758" y="566" fill="#9fe6ef" font-size="15" font-weight="700">REST API</text>
+      <text x="758" y="590" fill="#8aa9ad" font-size="12.5" class="mono">request / response → bot</text>
+    </g>
+
+    <text x="500" y="652" fill="#c9c9d0" font-size="13.5">No data is invented in the clients — both read this one state.</text>
+    <text x="500" y="682" fill="#8a8a93" font-size="12.5" class="mono">the dashboard updates live, with no page refresh</text>
+  </g>
+
+  <!-- ===== NODE: Web Dashboard ===== -->
+  <g>
+    <rect x="1180" y="248" width="340" height="176" rx="14" fill="#141419" stroke="#60a5fa" stroke-opacity="0.55"/>
+    <rect x="1180" y="248" width="5" height="176" rx="2.5" fill="#60a5fa"/>
+    <circle cx="1206" cy="282" r="5" fill="#60a5fa"/>
+    <text x="1222" y="287" fill="#ededed" font-size="18" font-weight="700">Web Dashboard</text>
+    <text x="1202" y="311" fill="#8a8a93" font-size="12.5" class="mono">React · Vite · Three.js</text>
+    <line x1="1202" y1="324" x2="1498" y2="324" stroke="#22222a"/>
+    <text x="1202" y="350" fill="#c9c9d0" font-size="13.5">live top-view 3D office</text>
+    <text x="1202" y="373" fill="#c9c9d0" font-size="13.5">lights glow · fans spin</text>
+    <text x="1202" y="396" fill="#c9c9d0" font-size="13.5">device panel · power meter · alerts</text>
+    <text x="1202" y="418" fill="#a9c7f5" font-size="12.5" class="mono">real-time — no page refresh</text>
+  </g>
+
+  <!-- ===== NODE: Discord Bot ===== -->
+  <g>
+    <rect x="1180" y="452" width="340" height="150" rx="14" fill="#141419" stroke="#22d3ee" stroke-opacity="0.55"/>
+    <rect x="1180" y="452" width="5" height="150" rx="2.5" fill="#22d3ee"/>
+    <circle cx="1206" cy="486" r="5" fill="#22d3ee"/>
+    <text x="1222" y="491" fill="#ededed" font-size="18" font-weight="700">Discord Bot</text>
+    <text x="1202" y="515" fill="#8a8a93" font-size="12.5" class="mono">discord.js</text>
+    <line x1="1202" y1="528" x2="1498" y2="528" stroke="#22222a"/>
+    <text x="1202" y="554" fill="#9fe6ef" font-size="13.5" class="mono">!status · !room · !usage</text>
+    <text x="1202" y="577" fill="#c9c9d0" font-size="13.5">humanized replies (no data dumps)</text>
+    <text x="1202" y="598" fill="#ffbd85" font-size="12.5" class="mono">proactive after-hours alert post</text>
+  </g>
+
+  <!-- ===== NODE: User / Boss ===== -->
+  <g>
+    <rect x="1180" y="678" width="340" height="112" rx="14" fill="#121216" stroke="#9aa4b2" stroke-opacity="0.5"/>
+    <rect x="1180" y="678" width="5" height="112" rx="2.5" fill="#9aa4b2"/>
+    <circle cx="1206" cy="710" r="5" fill="#9aa4b2"/>
+    <text x="1222" y="715" fill="#ededed" font-size="18" font-weight="700">User / Boss</text>
+    <line x1="1202" y1="728" x2="1498" y2="728" stroke="#22222a"/>
+    <text x="1202" y="752" fill="#c9c9d0" font-size="13.5">watches dashboard · sends commands</text>
+    <text x="1202" y="774" fill="#c9c9d0" font-size="13.5">same reality on both views</text>
+  </g>
+
+  <!-- ===== edges (on top of nodes so arrowheads are visible) ===== -->
+  <g stroke-width="2.4" fill="none">
+    <path d="M360,342 L470,342" stroke="#2dd4bf" marker-end="url(#arw)"/>
+    <path d="M360,585 C420,585 430,545 470,545" stroke="#6b7280" stroke-dasharray="6 6" marker-end="url(#arw)"/>
+    <path d="M990,300 L1180,300" stroke="#60a5fa" marker-end="url(#arw)"/>
+    <path d="M1180,352 L990,352" stroke="#60a5fa" marker-end="url(#arw)"/>
+    <path d="M990,510 L1180,510" stroke="#22d3ee" marker-start="url(#arw-s)" marker-end="url(#arw)"/>
+    <path d="M990,566 L1180,594" stroke="#ff8833" marker-end="url(#arw)"/>
+    <path d="M1350,672 L1350,632" stroke="#9aa4b2" marker-start="url(#arw-s)" marker-end="url(#arw)"/>
+    <path d="M1520,700 C1584,668 1584,364 1520,334" stroke="#9aa4b2" marker-end="url(#arw)"/>
+  </g>
+
+  <!-- ===== edge labels (topmost) ===== -->
+  <g class="mono" font-size="12.5">
+    <g><rect x="333" y="322" width="154" height="22" rx="6" fill="#0e1614" stroke="#243b38"/><text x="410" y="337" fill="#8fded2" text-anchor="middle">device states</text></g>
+    <g><rect x="322" y="512" width="130" height="22" rx="6" fill="#101014" stroke="#2b2b33"/><text x="387" y="527" fill="#9aa4b2" text-anchor="middle">concept · future</text></g>
+    <g><rect x="1010" y="278" width="150" height="22" rx="6" fill="#0d131f" stroke="#20344f"/><text x="1085" y="293" fill="#a9c7f5" text-anchor="middle">Socket.IO live</text></g>
+    <g><rect x="1013" y="360" width="144" height="22" rx="6" fill="#0d131f" stroke="#20344f"/><text x="1085" y="375" fill="#a9c7f5" text-anchor="middle">REST control</text></g>
+    <g><rect x="1043" y="488" width="84" height="22" rx="6" fill="#0d1a1d" stroke="#1d3f45"/><text x="1085" y="503" fill="#9fe6ef" text-anchor="middle">REST</text></g>
+    <g><rect x="1000" y="606" width="112" height="22" rx="6" fill="#1a1206" stroke="#3f2e18"/><text x="1056" y="621" fill="#ffbd85" text-anchor="middle">proactive alert</text></g>
+    <g><rect x="1266" y="641" width="168" height="22" rx="6" fill="#101014" stroke="#2b2b33"/><text x="1350" y="656" fill="#c2c8d0" text-anchor="middle">commands / replies</text></g>
+    <g><rect x="1548" y="502" width="72" height="22" rx="6" fill="#101014" stroke="#2b2b33"/><text x="1584" y="517" fill="#c2c8d0" text-anchor="middle">opens</text></g>
+  </g>
+
+  <!-- ===== footer ===== -->
+  <g class="mono">
+    <text x="60" y="892" fill="#5f5f68" font-size="13">Office: 3 rooms · fan ≈ 60 W · light ≈ 15 W · office hours 9 AM – 5 PM · a room ON &gt; 2 h continuously triggers an alert</text>
+    <text x="60" y="922" fill="#454550" font-size="13">WattsUp · Lights, Fans, Discord — one shared backend, two synchronized views (no Mermaid; hand-authored SVG)</text>
+  </g>
+</svg>
+</body>
+</html>

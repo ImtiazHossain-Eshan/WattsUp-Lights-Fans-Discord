@@ -43,7 +43,11 @@ ehthumbs.db
 
 # ─────────────── internal working docs (kept local) ─────────────
 # Team-only markdown (demo/video script, validation & submission
-# checklists, manual test plan, internal setup/API notes). The public
-# README + diagrams/ are the shipped documentation. Remove a line here
-# if you decide to publish that doc.
-docs/
+# checklists, manual test plan, internal setup/API notes) stay local.
+# The public README + diagrams/ + the shipped diagram images in docs/
+# are the published documentation.
+docs/*
+# …but publish the rendered diagrams referenced by the README:
+!docs/system-architecture.png
+!docs/system-architecture.html
+!docs/hardware-schematic.png
