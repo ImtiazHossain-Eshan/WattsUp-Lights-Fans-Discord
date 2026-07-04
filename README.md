@@ -102,7 +102,12 @@ no duplicated code:
    Discord channel  ─────────►  USER / BOSS  ◄───────── browser
 ```
 
-Full diagram + draw.io/Excalidraw recreation guide: [`diagrams/system-architecture.md`](diagrams/system-architecture.md)
+![WattsUp system architecture diagram](docs/system-architecture.png)
+
+*High-level system diagram — [`docs/system-architecture.png`](docs/system-architecture.png)
+(hand-authored SVG, no Mermaid; source: [`docs/system-architecture.html`](docs/system-architecture.html)).*
+
+Full write-up + draw.io/Excalidraw recreation guide: [`diagrams/system-architecture.md`](diagrams/system-architecture.md)
 (no Mermaid, per the problem statement). Data flows:
 
 - Device state → simulated data → backend → **Socket.IO** → live dashboard
@@ -163,14 +168,18 @@ pulses animating along the connectors and a few blocks showing live backend numb
 ├── bot/
 │   ├── bot.js                     # all commands + proactive alert poller
 │   └── assets/                    # WattsUp bot avatar (SVG source + PNG)
-├── diagrams/                      # system architecture + hardware schematic
+├── diagrams/                      # system architecture + hardware schematic (write-ups)
+├── docs/                          # rendered diagram images (PNG) embedded in this README
+│   ├── system-architecture.png    #   high-level system diagram (source: .html)
+│   ├── system-architecture.html   #   hand-authored SVG source (no Mermaid)
+│   └── hardware-schematic.png     #   Wokwi ESP32 one-room circuit
 ├── .gitignore
 └── README.md
 ```
 
 Internal working notes (demo/video script, validation & submission checklists, manual
-test plan) are kept **local, not committed** — this README plus `diagrams/` are the
-shipped documentation.
+test plan) are kept **local, not committed** — this README plus `diagrams/` and `docs/`
+are the shipped documentation.
 
 ## Quick start
 
@@ -369,6 +378,14 @@ One representative room circuit — ESP32 + 5 switch inputs (`INPUT_PULLUP`) + 5
 indicators + optional ACS712 current sensor with a 3.3 V divider — with pin mapping,
 Wokwi part names, illustrative firmware, and the safety story (relays, opto-isolation,
 fuses; GPIOs never switch mains): [`diagrams/hardware-schematic.md`](diagrams/hardware-schematic.md)
+
+![WattsUp hardware / electrical schematic — ESP32 one-room circuit](docs/hardware-schematic.png)
+
+*Electrical schematic — [`docs/hardware-schematic.png`](docs/hardware-schematic.png). ESP32
+reads 5 switches (Fan 1–2, Light 1–3) and drives 5 LED indicators; the same block repeats
+per room in a real deployment.*
+
+**Live Wokwi project:** <https://wokwi.com/projects/468606904510667777>
 
 ## Known limitations
 

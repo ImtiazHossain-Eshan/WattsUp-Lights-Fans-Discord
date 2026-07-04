@@ -1,5 +1,8 @@
 # Hardware Schematic — One-Room Sensing Circuit (Wokwi / Tinkercad style)
 
+**Live Wokwi project:** <https://wokwi.com/projects/468606904510667777>
+**Rendered schematic:** [`../docs/hardware-schematic.png`](../docs/hardware-schematic.png)
+
 The PDF asks how the devices *would* be wired and sensed in real life. No real hardware
 is required, and wiring all 15 devices adds nothing conceptually — so this is a
 **representative circuit for one room** (2 fans + 3 lights). The same block repeats per
