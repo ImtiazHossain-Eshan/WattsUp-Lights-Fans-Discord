@@ -209,18 +209,69 @@ Examples with full payloads: [`docs/api-reference.md`](docs/api-reference.md)
 control change **and clock change**):
 `devices:update` · `rooms:update` · `usage:update` · `alerts:update` · `simulation:update` · `clock:update`
 
-## Bot commands
+## Discord bot
+
+The bot is the boss's quick-access remote: it reads (and controls) **the exact same
+backend as the dashboard**, fetching fresh data the moment a command arrives — nothing
+is hardcoded, cached or generated inside the bot, so both interfaces always reflect the
+same reality. Replies are rich embeds with **interactive buttons** (jump between rooms,
+refresh, pause the simulation, turn a room off), and every timestamp/age is measured on
+the **office clock**, so Discord matches the dashboard even at 600× demo speed.
 
 | Command | What it does |
 |---------|--------------|
-| `!status` | all-room summary + totals + simulation state |
-| `!room <name>` | one room's 5 devices + power + 🔄 auto / 🔒 manual (aliases accepted) |
-| `!usage` | total W, estimated kWh today, per-room ▰▰▱ bars |
-| `!alerts` | active alerts, or a friendly all-clear |
+| `!status` | all rooms at a glance ("Work Room 1 — all off 😴"), totals, simulation state + room buttons |
+| `!room <name>` | Fan 1/2 + Light 1/2/3 states, auto/manual, room power — `drawing`, `work1`, `work room 2`… all work |
+| `!usage` | total W, estimated kWh today, per-room bar breakdown |
+| `!alerts` | active alerts with severity + age, or a friendly all-clear |
+| `!simulation [on\|off]` | view or switch the simulated device layer |
+| `!turnoff all` / `!turnoff room <name>` | switch everything (or one room) off — pinned to manual |
 | `!help` | command list |
 
-Replies are generated from live API data at message time — nothing hardcoded. New
-alerts are also posted proactively to `ALERT_CHANNEL_ID` (30 s poll, each alert once).
+Example `!status` reply (values are always live — never these literals):
+
+> 🏢 **Office right now**
+> 🛋️ **Drawing Room** — 1 fan and 2 lights ON · 105 W
+> 💼 **Work Room 1** — all off 😴
+> 🖥️ **Work Room 2** — 2 fans and 3 lights ON · 165 W
+>
+> **Total power: 270 W** · 8/15 devices on · est. **2.14 kWh** today
+> _Looks like Work Room 2 is the main power user right now._
+
+**Proactive alerts (bonus):** the bot polls `GET /api/alerts` every 30 s, keeps a `Set`
+of already-posted alert IDs, and posts **only new alerts** to `ALERT_CHANNEL_ID` — one
+combined embed even when several fire at once (e.g. after jumping the office clock to
+6 PM), so it never spams. If `ALERT_CHANNEL_ID` is missing, the poller stays off and
+commands keep working. Invalid room names, missing arguments, a stopped backend and
+malformed responses all get friendly replies instead of crashes.
+
+### Bot setup (≈5 minutes)
+
+1. **Create the app** — <https://discord.com/developers/applications> → *New
+   Application* → name it (e.g. `WattsUp`).
+2. **Get the token** — *Bot* page → *Reset Token* → copy it.
+3. **Enable the intent** — same *Bot* page → toggle **MESSAGE CONTENT INTENT** ON
+   (without it the bot cannot read `!commands` — the #1 setup mistake).
+4. **Invite it** — *OAuth2 → URL Generator*: scope `bot`; permissions *View Channels*,
+   *Send Messages*, *Read Message History* → open the generated URL, pick your server.
+5. **Channel ID for alerts** — Discord → *Settings → Advanced → Developer Mode ON*,
+   then right-click your alerts channel → *Copy Channel ID*.
+6. **Configure & run:**
+
+   ```bash
+   cd bot && npm install
+   copy .env.example .env       # macOS/Linux: cp .env.example .env
+   # edit .env → DISCORD_TOKEN=…  BACKEND_URL=http://localhost:5000  ALERT_CHANNEL_ID=…
+   npm run dev
+   ```
+
+   Expected console: `🤖 WattsUp bot logged in as …` and `Backend reachable ✔`. Type
+   `!status` in any channel the bot can see.
+
+Env vars: `DISCORD_TOKEN` (required) · `BACKEND_URL` (default `http://localhost:5000`) ·
+`ALERT_CHANNEL_ID` (optional — proactive alerts). The PDF also encourages LLM-generated
+replies; the bot ships with template-based humanized responses instead so judges can run
+it without any API key — an LLM could be slotted into the view builders in `bot/bot.js`.
 
 ## The 3D dashboard, briefly
 
@@ -304,7 +355,8 @@ fuses; GPIOs never switch mains): [`diagrams/hardware-schematic.md`](diagrams/ha
 
 - Persist device history (SQLite) → real kWh integration + daily/weekly charts
 - Push the control path to hardware: a real ESP32 acting on `PATCH /api/devices/:id/*`
-- Discord slash commands to *control* devices (read + control already share one backend)
+- Discord slash (/) command registration — the prefix commands + buttons already read *and* control devices
+- Optional LLM-generated conversational bot replies (PDF-encouraged; template-based today so no API key is needed)
 - Cost estimation (kWh × tariff) and monthly budget alerts
 
 ---

@@ -1,8 +1,10 @@
 const COMMANDS = [
-  { cmd: "!status", desc: "All-room summary — who's burning watts right now" },
+  { cmd: "!status", desc: "All-room summary with interactive room buttons" },
   { cmd: "!room <name>", desc: 'One room in detail — accepts "drawing", "work1", "work room 2"…' },
   { cmd: "!usage", desc: "Total power, estimated kWh today and per-room breakdown" },
   { cmd: "!alerts", desc: "Active after-hours / long-running alerts" },
+  { cmd: "!simulation on|off", desc: "View or switch the simulated device layer" },
+  { cmd: "!turnoff all|room <n>", desc: "Everything (or one room) off — pinned to manual" },
   { cmd: "!help", desc: "Command list" },
 ];
 
