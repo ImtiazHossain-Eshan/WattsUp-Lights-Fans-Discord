@@ -6,6 +6,9 @@
 import { io } from "socket.io-client";
 import { BACKEND_URL } from "./api";
 
-export const socket = io(BACKEND_URL, {
+// Empty BACKEND_URL (production same-origin) → connect to the page's own origin.
+// The Socket.IO path lives under /api so one host routes it to the backend.
+export const socket = io(BACKEND_URL || undefined, {
+  path: "/api/socket.io",
   autoConnect: false,
 });

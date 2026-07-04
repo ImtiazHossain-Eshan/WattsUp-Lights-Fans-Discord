@@ -31,6 +31,9 @@ function emitState(target) {
 
 function initSocket(httpServer, corsOrigin) {
   const io = new Server(httpServer, {
+    // Served under /api so a single host can route "/" → dashboard and
+    // "/api" → this backend (REST + Socket.IO). Matches the dashboard client.
+    path: "/api/socket.io",
     cors: { origin: corsOrigin, methods: ["GET", "POST"] },
   });
   ioRef = io;

@@ -5,8 +5,13 @@
 
 import axios from "axios";
 
+// In production the dashboard and API are served from the SAME origin (one app:
+// dashboard at "/", backend at "/api"), so an empty base means same-origin
+// relative requests — no CORS, no hardcoded URL. In dev we fall back to the
+// local backend. Set VITE_BACKEND_URL only to point at a separately-hosted API.
 export const BACKEND_URL =
-  import.meta.env.VITE_BACKEND_URL || "http://localhost:5000";
+  import.meta.env.VITE_BACKEND_URL ??
+  (import.meta.env.DEV ? "http://localhost:5000" : "");
 
 const client = axios.create({
   baseURL: `${BACKEND_URL}/api`,
