@@ -30,6 +30,7 @@ export default function DashboardShell({
   loading,
   error,
   busy,
+  pendingIds,
   actionError,
   actions,
 }) {
@@ -105,6 +106,7 @@ export default function DashboardShell({
             usage={roomSummaries[name]}
             alerts={alerts.filter((a) => a.room === name)}
             busy={busy}
+            pendingIds={pendingIds}
             onToggle={actions.toggleDevice}
             onSetMode={actions.setDeviceMode}
             onRoomOff={actions.turnRoomOff}

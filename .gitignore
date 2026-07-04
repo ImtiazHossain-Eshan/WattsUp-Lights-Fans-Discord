@@ -1,23 +1,49 @@
-# dependencies
+# ───────────────────────── dependencies ─────────────────────────
 node_modules/
+.pnp
+.pnp.js
 
-# environment secrets (keep .env.example, never commit real tokens)
+# ──────────────────── environment secrets ───────────────────────
+# Ignore real env files everywhere; keep the *.env.example templates.
 .env
-.env.local
+.env.*
+!.env.example
+!**/.env.example
 
-# build output
+# ─────────────────────── build output ───────────────────────────
 dist/
 build/
+.vite/
+*.tsbuildinfo
 
-# logs
+# ──────────────────────── logs / debug ──────────────────────────
 *.log
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# OS / editor junk
+# ──────────────── coverage / test artifacts ─────────────────────
+coverage/
+.nyc_output/
+
+# ─────────────────────── OS / editor junk ───────────────────────
 .DS_Store
 Thumbs.db
+desktop.ini
+ehthumbs.db
+*.swp
+*.swo
+*~
 .vscode/
 .idea/
 
-# local tooling
+# ─────────────────────── local tooling ──────────────────────────
 .claude/
+
+# ─────────────── internal working docs (kept local) ─────────────
+# Team-only markdown (demo/video script, validation & submission
+# checklists, manual test plan, internal setup/API notes). The public
+# README + diagrams/ are the shipped documentation. Remove a line here
+# if you decide to publish that doc.
+docs/

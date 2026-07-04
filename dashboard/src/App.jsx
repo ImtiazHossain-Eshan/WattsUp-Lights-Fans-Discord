@@ -29,11 +29,16 @@ export default function App() {
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(false); // bulk/global actions only
+  const [pendingIds, setPendingIds] = useState([]); // device ids with an in-flight toggle/mode
   const [actionError, setActionError] = useState(null);
 
-  // Guards against overlapping control requests (each waits on the backend).
+  // Guards against overlapping *global* control requests (turn-all-off, reset,
+  // simulation, clock) — each waits on the backend.
   const inFlight = useRef(false);
+  // Per-device in-flight guard: a double-click on ONE device can't race, while
+  // different devices can still be toggled concurrently.
+  const pendingRef = useRef(new Set());
 
   useEffect(() => {
     let disposed = false;
@@ -130,11 +135,35 @@ export default function App() {
     }
   }, []);
 
+  /**
+   * Per-device control (toggle / mode). Only the target device is marked
+   * "pending", so its own switch shows feedback while every OTHER control on the
+   * dashboard stays fully lit and interactive — this is what removes the
+   * whole-panel flicker the global `busy` flag used to cause on every toggle. A
+   * second click on the SAME device while it's in flight is ignored; different
+   * devices run concurrently (the backend serializes and rebroadcasts).
+   */
+  const runDeviceAction = useCallback(async (id, fn, failMessage) => {
+    if (pendingRef.current.has(id)) return;
+    pendingRef.current.add(id);
+    setPendingIds([...pendingRef.current]);
+    setActionError(null);
+    try {
+      await fn();
+    } catch (err) {
+      const detail = err?.response?.data?.message || err?.message || "";
+      setActionError(`${failMessage}${detail ? ` (${detail})` : ""}`);
+    } finally {
+      pendingRef.current.delete(id);
+      setPendingIds([...pendingRef.current]);
+    }
+  }, []);
+
   const actions = {
     toggleDevice: (id) =>
-      runAction(() => toggleDevice(id), "Couldn't toggle that device"),
+      runDeviceAction(id, () => toggleDevice(id), "Couldn't toggle that device"),
     setDeviceMode: (id, mode) =>
-      runAction(() => setDeviceMode(id, mode), "Couldn't change control mode"),
+      runDeviceAction(id, () => setDeviceMode(id, mode), "Couldn't change control mode"),
     toggleSimulation: (enabled) =>
       runAction(() => setSimulation(enabled), "Couldn't change the simulation"),
     resetAllToAuto: () =>
@@ -162,6 +191,7 @@ export default function App() {
       loading={loading}
       error={error}
       busy={busy}
+      pendingIds={pendingIds}
       actionError={actionError}
       actions={actions}
     />

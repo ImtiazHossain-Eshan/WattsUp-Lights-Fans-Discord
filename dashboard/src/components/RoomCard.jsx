@@ -16,6 +16,7 @@ export default function RoomCard({
   usage,
   alerts,
   busy,
+  pendingIds = [],
   onToggle,
   onSetMode,
   onRoomOff,
@@ -60,7 +61,7 @@ export default function RoomCard({
           <DeviceControls
             key={d.id}
             device={d}
-            busy={busy}
+            pending={pendingIds.includes(d.id)}
             nowMs={nowMs}
             onToggle={onToggle}
             onSetMode={onSetMode}

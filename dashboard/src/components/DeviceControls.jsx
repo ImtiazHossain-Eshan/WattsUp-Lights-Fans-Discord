@@ -2,14 +2,14 @@ import DeviceIcon from "./DeviceIcon.jsx";
 import { formatOfficeTime, relOfficeTime } from "../officeClock.js";
 
 /** Auto/Manual segmented control — doubles as the mode badge (active = current mode). */
-function ModeToggle({ mode, busy, onSetMode }) {
+function ModeToggle({ mode, pending, onSetMode }) {
   return (
     <div className="mode-toggle" role="group" aria-label="Control mode">
       <button
         type="button"
         className={`mode-btn mode-btn--auto ${mode === "auto" ? "active" : ""}`}
         aria-pressed={mode === "auto"}
-        disabled={busy || mode === "auto"}
+        disabled={pending || mode === "auto"}
         onClick={() => onSetMode("auto")}
       >
         Auto
@@ -18,7 +18,7 @@ function ModeToggle({ mode, busy, onSetMode }) {
         type="button"
         className={`mode-btn mode-btn--manual ${mode === "manual" ? "active" : ""}`}
         aria-pressed={mode === "manual"}
-        disabled={busy || mode === "manual"}
+        disabled={pending || mode === "manual"}
         onClick={() => onSetMode("manual")}
       >
         Manual
@@ -32,15 +32,15 @@ function ModeToggle({ mode, busy, onSetMode }) {
  * key (I = on, O = off) plus a status LED. Pressing it toggles the device via
  * the backend — the tilt/glow only ever renders the broadcast state.
  */
-function RockerSwitch({ on, type, busy, label, onToggle }) {
+function RockerSwitch({ on, type, pending, label, onToggle }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={on}
       aria-label={label}
-      className={`rocker rocker--${type} ${on ? "is-on" : ""}`}
-      disabled={busy}
+      className={`rocker rocker--${type} ${on ? "is-on" : ""} ${pending ? "is-pending" : ""}`}
+      disabled={pending}
       onClick={onToggle}
     >
       <span className="rocker-led" aria-hidden="true" />
@@ -64,7 +64,7 @@ function RockerSwitch({ on, type, busy, label, onToggle }) {
  * `nowMs` is the ticking OFFICE time (passed by RoomCard) so relative ages
  * follow the virtual clock, not the wall clock.
  */
-export default function DeviceControls({ device, busy, nowMs, onToggle, onSetMode }) {
+export default function DeviceControls({ device, pending, nowMs, onToggle, onSetMode }) {
   const on = device.status === "on";
   return (
     <li
@@ -90,7 +90,7 @@ export default function DeviceControls({ device, busy, nowMs, onToggle, onSetMod
 
         <ModeToggle
           mode={device.controlMode}
-          busy={busy}
+          pending={pending}
           onSetMode={(mode) => onSetMode(device.id, mode)}
         />
       </div>
@@ -98,7 +98,7 @@ export default function DeviceControls({ device, busy, nowMs, onToggle, onSetMod
       <RockerSwitch
         on={on}
         type={device.type}
-        busy={busy}
+        pending={pending}
         label={`Turn ${device.name} ${on ? "off" : "on"}`}
         onToggle={() => onToggle(device.id)}
       />
