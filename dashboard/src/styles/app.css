@@ -1982,199 +1982,316 @@ body::before {
   margin: 0 0 14px;
 }
 
-.sysdiagram-stage {
-  overflow-x: auto;
+.sysdiagram-lead-hint {
+  color: var(--brand-fg);
+  opacity: 0.8;
+}
+
+/* ---- 3D isometric scene ---- */
+.arch3d-viewport {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background:
-    radial-gradient(120% 120% at 50% -10%, rgba(244, 65, 116, 0.05), transparent 60%),
-    #08080a;
-  padding: 8px;
+    radial-gradient(120% 90% at 50% -20%, rgba(244, 65, 116, 0.08), transparent 62%),
+    radial-gradient(90% 80% at 82% 120%, rgba(14, 165, 233, 0.06), transparent 60%),
+    #070709;
 }
 
-.sysdiagram-svg {
-  display: block;
-  width: 100%;
-  min-width: 940px;
-  height: auto;
+.arch3d-scaler {
+  position: absolute;
+  top: 0;
+  transform-origin: top left;
 }
 
-/* per-layer accent colors (professional, no purple/neon) */
-.sd-node--device { --c: #2dd4bf; }
-.sd-node--backend { --c: #93a1b5; }
-.sd-node--store { --c: var(--brand); }
-.sd-node--info { --c: #38bdf8; }
-.sd-node--alert { --c: var(--warn); }
-.sd-node--frontend { --c: #60a5fa; }
-.sd-node--bot { --c: #22d3ee; }
-.sd-node--user { --c: #9aa4b2; }
-.sd-node--future { --c: #6b7280; }
-
-/* ---- backend container ---- */
-.sd-container-box {
-  fill: rgba(244, 65, 116, 0.04);
-  stroke: rgba(244, 65, 116, 0.4);
-  stroke-width: 1.4;
-  stroke-dasharray: 3 5;
+.arch3d-world {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  /* symmetric resting pose (no baked-in yaw) so both columns stay in frame;
+     yaw comes only from pointer parallax */
+  transform: perspective(1700px)
+    rotateX(calc(9deg + var(--rx, 0deg)))
+    rotateY(var(--ry, 0deg));
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
 }
 
-.sd-container-title {
-  fill: var(--text);
-  font-size: 15px;
+.arch3d-floor {
+  position: absolute;
+  inset: -80px -40px -40px;
+  transform: translateZ(-46px);
+  background-image:
+    linear-gradient(rgba(244, 65, 116, 0.16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120, 200, 255, 0.12) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(120% 90% at 50% 40%, #000 0%, transparent 74%);
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 40%, #000 0%, transparent 74%);
+  opacity: 0.7;
+}
+
+.arch3d-lane {
+  position: absolute;
+  transform: translateZ(4px);
+  font-size: 10.5px;
   font-weight: 600;
-  font-family: var(--font-mono);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+  pointer-events: none;
+}
+.arch3d-lane::before {
+  content: "";
+  display: inline-block;
+  width: 22px;
+  height: 1px;
+  margin-right: 8px;
+  vertical-align: middle;
+  background: currentColor;
+  opacity: 0.5;
 }
 
-.sd-container-sub {
-  fill: var(--muted);
-  font-size: 11px;
-  font-family: var(--font-mono);
+/* per-layer accent colors (shared by 3D nodes, legend & detail dot) */
+.arch3d-node--device,  .sd-key--device  { --c: #2dd4bf; }
+.arch3d-node--backend, .sd-key--backend { --c: #93a1b5; }
+.arch3d-node--store,   .sd-key--store   { --c: var(--brand); }
+.arch3d-node--info,    .sd-key--info    { --c: #38bdf8; }
+.arch3d-node--alert,   .sd-key--alert   { --c: var(--warn); }
+.arch3d-node--frontend,.sd-key--frontend{ --c: #60a5fa; }
+.arch3d-node--bot,     .sd-key--bot     { --c: #22d3ee; }
+.arch3d-node--user,    .sd-key--user    { --c: #9aa4b2; }
+.arch3d-node--future,  .sd-key--future  { --c: #6b7280; }
+
+/* ---- backend slab (glass platform behind the core submodules) ---- */
+.arch3d-slab {
+  position: absolute;
+  transform: translateZ(8px);
+  border-radius: 18px;
+  background:
+    linear-gradient(155deg, rgba(244, 65, 116, 0.09), rgba(244, 65, 116, 0.015) 60%);
+  border: 1px solid rgba(244, 65, 116, 0.3);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 0 46px rgba(244, 65, 116, 0.06),
+    0 30px 60px -34px rgba(244, 65, 116, 0.55);
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.arch3d-slab.is-back { opacity: 0.45; }
+
+.arch3d-slab-title {
+  position: absolute;
+  left: 20px;
+  top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  color: var(--brand-fg);
+}
+.arch3d-slab-sub {
+  position: absolute;
+  left: 20px;
+  top: 31px;
+  font-size: 10.5px;
+  color: var(--muted);
 }
 
-/* ---- nodes (foreignObject cards) ---- */
-.sd-node-fo {
-  overflow: visible;
-  transition: opacity 0.25s ease;
+/* ---- floating node cards ---- */
+.arch3d-node {
+  position: absolute;
+  cursor: pointer;
+  transform: translateZ(var(--z, 20px));
+  transform-style: preserve-3d;
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease;
 }
+.arch3d-node.is-dim { opacity: 0.24; }
 
-.sd-node-fo.is-dim {
-  opacity: 0.32;
-}
-
-.sd-node {
+.arch3d-node-face {
+  position: relative;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 8px 11px;
-  border-radius: 10px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-medium);
-  border-left: 3px solid var(--c);
-  cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 5px;
+  padding: 10px 13px;
+  border-radius: 12px;
+  overflow: hidden;
   font-family: var(--font-mono);
+  background: linear-gradient(158deg, rgba(32, 32, 37, 0.95), rgba(14, 14, 17, 0.95));
+  border: 1px solid var(--border-medium);
+  border-top-color: rgba(255, 255, 255, 0.06);
+  /* clean glass card that floats on its own layer-colored light — the accent
+     lives in the drop shadow (a soft coloured glow on the floor below) and in
+     the status dot, not in a spine or bar bolted to one edge */
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 18px 26px -14px rgba(0, 0, 0, 0.75),
+    0 26px 40px -22px color-mix(in srgb, var(--c) 38%, transparent);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.sd-node:hover,
-.sd-node-fo.is-hot .sd-node {
+.arch3d-node--store .arch3d-node-face {
+  background: linear-gradient(158deg, rgba(61, 14, 31, 0.9), rgba(20, 9, 14, 0.95));
+}
+.arch3d-node--future .arch3d-node-face {
+  border-style: dashed;
+  background: linear-gradient(158deg, rgba(22, 22, 26, 0.7), rgba(12, 12, 15, 0.72));
+}
+
+.arch3d-node:hover,
+.arch3d-node.is-hot {
+  transform: translateZ(calc(var(--z, 20px) + 34px));
+}
+.arch3d-node:hover .arch3d-node-face,
+.arch3d-node.is-hot .arch3d-node-face {
+  border-color: color-mix(in srgb, var(--c) 55%, var(--border-medium));
+  box-shadow:
+    0 0 0 1px var(--c),
+    0 0 24px -2px color-mix(in srgb, var(--c) 55%, transparent),
+    0 24px 34px -14px rgba(0, 0, 0, 0.78);
+}
+.arch3d-node.is-sel .arch3d-node-face {
   border-color: var(--c);
-  box-shadow: 0 0 0 1px var(--c), 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow:
+    0 0 0 2px var(--c),
+    0 0 28px -2px color-mix(in srgb, var(--c) 60%, transparent);
 }
 
-.sd-node.is-sel {
-  border-color: var(--c);
-  box-shadow: 0 0 0 2px var(--c);
-}
-
-.sd-node-head {
+.arch3d-node-head {
   display: flex;
   align-items: center;
   gap: 7px;
 }
-
-.sd-node-dot {
+.arch3d-node-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--c);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--c) 22%, transparent),
+    0 0 10px var(--c);
   flex-shrink: 0;
 }
-
-.sd-node-title {
+.arch3d-node-title {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text);
   line-height: 1.15;
 }
-
-.sd-node-live {
+.arch3d-node-live {
   margin-left: auto;
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.3px;
   color: var(--c);
-  background: color-mix(in srgb, var(--c) 14%, transparent);
-  border: 1px solid color-mix(in srgb, var(--c) 40%, transparent);
+  background: color-mix(in srgb, var(--c) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 42%, transparent);
   padding: 1px 6px;
   border-radius: 999px;
   white-space: nowrap;
 }
-
-.sd-node-sub {
+.arch3d-node-sub {
   font-size: 10.5px;
   color: var(--text-2);
   line-height: 1.3;
 }
 
-.sd-node--future .sd-node {
-  border-style: dashed;
-  background: rgba(255, 255, 255, 0.02);
+/* small dot reused inside the detail card */
+.sd-node-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--c);
+  flex-shrink: 0;
 }
 
-/* ---- edges ---- */
-.sd-edge--device { --e: #2dd4bf; }
-.sd-edge--ok { --e: var(--ok); }
-.sd-edge--info { --e: #60a5fa; }
-.sd-edge--bot { --e: #22d3ee; }
-.sd-edge--alert { --e: var(--warn); }
-.sd-edge--user { --e: #9aa4b2; }
-.sd-edge--muted { --e: #4a4a52; }
+/* ---- wires + energy pulses ---- */
+.arch3d-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: translateZ(2px);
+  pointer-events: none;
+}
 
-.sd-edge-path {
+/* edge labels float above the tallest raised card so nothing covers them.
+   the inner <g> pre-shrinks them so perspective at this depth nets back to
+   the wire plane's scale (see compensation factor in the component). */
+.arch3d-labels {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: translateZ(110px);
+  pointer-events: none;
+}
+
+.a3-edge--device { --e: #2dd4bf; }
+.a3-edge--info   { --e: #38bdf8; }
+.a3-edge--bot    { --e: #22d3ee; }
+.a3-edge--alert  { --e: var(--warn); }
+.a3-edge--user   { --e: #9aa4b2; }
+.a3-edge--muted  { --e: #4a4a52; }
+
+.a3-edge-path {
   fill: none;
   stroke: var(--e);
-  stroke-width: 1.6;
-  opacity: 0.55;
+  stroke-width: 1.8;
+  opacity: 0.6;
   transition: opacity 0.25s ease, stroke-width 0.25s ease;
 }
-
-.sd-edge--muted .sd-edge-path {
-  stroke-dasharray: 4 4;
-  opacity: 0.4;
+.a3-edge--muted .a3-edge-path {
+  stroke-dasharray: 4 5;
+  opacity: 0.36;
 }
-
-.sd-flow {
-  fill: var(--e);
-  filter: drop-shadow(0 0 4px var(--e));
-}
-
-/* edge labels (top layer, chip background so they read over node cards) */
-.sd-label {
+.a3-edge-glow {
+  fill: none;
+  stroke: var(--e);
+  stroke-width: 7;
+  opacity: 0.1;
+  filter: blur(4px);
   transition: opacity 0.25s ease;
 }
+.a3-edge--muted .a3-edge-glow { opacity: 0; }
 
-.sd-label-bg {
-  fill: #0c0c0f;
+.a3-pulse {
+  fill: var(--e);
+  filter: drop-shadow(0 0 5px var(--e));
+}
+.a3-pulse--trail { opacity: 0.32; }
+
+.a3-label { transition: opacity 0.25s ease; }
+.a3-label-bg {
+  fill: #0b0b0e;
   stroke: var(--border-medium);
   stroke-width: 1;
 }
-
-.sd-edge-label {
+.a3-label-text {
   fill: var(--text-2);
   font-size: 10px;
   font-family: var(--font-mono);
 }
 
 /* hover emphasis / dimming */
-.sysdiagram-svg.has-active .sd-edge:not(.is-hot) .sd-edge-path,
-.sysdiagram-svg.has-active .sd-edge:not(.is-hot) .sd-flow,
-.sysdiagram-svg.has-active .sd-label:not(.is-hot) {
-  opacity: 0.12;
+.arch3d-viewport.has-active .a3-edge:not(.is-hot) .a3-edge-path,
+.arch3d-viewport.has-active .a3-edge:not(.is-hot) .a3-edge-glow,
+.arch3d-viewport.has-active .a3-edge:not(.is-hot) .a3-pulse,
+.arch3d-viewport.has-active .a3-label:not(.is-hot) {
+  opacity: 0.08;
 }
-
-.sd-edge.is-hot .sd-edge-path {
+.a3-edge.is-hot .a3-edge-path {
   opacity: 1;
-  stroke-width: 2.4;
+  stroke-width: 2.6;
 }
-.sd-label.is-hot .sd-label-bg {
-  stroke: var(--e);
-}
-.sd-label.is-hot .sd-edge-label {
-  fill: var(--text);
-}
+.a3-edge.is-hot .a3-edge-glow { opacity: 0.24; }
+.a3-label.is-hot .a3-label-bg { stroke: var(--e); }
+.a3-label.is-hot .a3-label-text { fill: var(--text); }
 
 /* ---- footer: legend + detail ---- */
 .sysdiagram-footer {
@@ -2279,7 +2396,10 @@ body::before {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sd-flow {
+  .a3-pulse {
     display: none;
+  }
+  .arch3d-world {
+    transition: none;
   }
 }
