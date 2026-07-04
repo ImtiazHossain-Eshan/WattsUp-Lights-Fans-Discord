@@ -117,6 +117,17 @@ export function ClockIcon({ size, className }) {
   );
 }
 
+export function SitemapIcon({ size, className }) {
+  return (
+    <Svg size={size} className={className}>
+      <rect x="9" y="3.5" width="6" height="5" rx="1.2" />
+      <rect x="3" y="15.5" width="6" height="5" rx="1.2" />
+      <rect x="15" y="15.5" width="6" height="5" rx="1.2" />
+      <path d="M12 8.5v3.5M6 15.5V12h12v3.5" />
+    </Svg>
+  );
+}
+
 export function LayoutIcon({ size, className }) {
   return (
     <Svg size={size} className={className}>
