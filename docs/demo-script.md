@@ -1,9 +1,11 @@
 # 3-Minute Demo Script
 
 **Before recording:** backend + dashboard + bot all running; Discord open in a second
-window; for guaranteed alerts start the backend with demo knobs:
-`OFFICE_START_HOUR=24` and `LONG_RUNNING_HOURS=0.01` in `backend/.env` (see
-docs/testing-plan.md). Practice once — 3 minutes is short.
+window. For guaranteed alerts, use the dashboard's **office clock** live on camera —
+jump to **6 PM** to trigger after-hours warnings, and bump the **speed to 1800×** to age
+a fully-ON room past the 2-hour limit in seconds (no restart needed). The old env knobs
+(`OFFICE_START_HOUR=24`, `LONG_RUNNING_HOURS=0.01`) still work too. Practice once — 3
+minutes is short.
 
 ---
 

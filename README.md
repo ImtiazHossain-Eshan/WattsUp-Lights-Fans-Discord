@@ -63,14 +63,19 @@ no duplicated code:
   lights), all driven by live backend state. Devices are drawn procedurally on top of the
   models, so every visual stays 100% data-driven
 - 🎛️ **Manual + auto control**: every device has a `controlMode` (`auto`/`manual`). The
-  simulator only touches **auto** devices; **manual** ones are the user's. Toggle any
-  device's power or mode, click a fan/light in the 3D scene to toggle it, turn a whole
-  room (or everything) off, reset all back to auto, or flip the simulation on/off — all
-  from the dashboard. Controls **write to the backend first**; the UI updates from the
-  broadcast, never from local-only state
+  simulator only touches **auto** devices; **manual** ones are the user's. Flip a device
+  with its **physical rocker wall-switch** on the room card or by clicking the fan/light in
+  the 3D scene, switch it between Auto/Manual, turn a whole room (or everything) off, reset
+  all back to auto, or pause the simulation — all from the dashboard. Controls **write to
+  the backend first**; the UI updates from the broadcast, never from local-only state
+- ⏱️ **Office clock** — one global, controllable virtual time (backend `clockService`) that
+  every timestamp, alert age and kWh estimate derives from, so cards never disagree. Change
+  the **speed** (1× → 1800×), **jump** to a preset or custom time, or **reset** to real
+  time: jump to 6 PM and after-hours alerts light up everywhere at once; run at 1800× to
+  age a room past the 2-hour limit in seconds
 - 📊 **Live panels**: total power meter, estimated kWh today, per-room bars, per-room
-  device control cards (ON/OFF + Auto/Manual, dynamic SVG fan/light icons), alerts feed
-  — updated via Socket.IO with **no page refresh**
+  device control cards (rocker switch + Auto/Manual, animated SVG fan/light icons), alerts
+  feed — updated via Socket.IO with **no page refresh**
 - 🖱️ **Hover tooltips** on every scene device: name, room, status, watts, mode, last changed
 - 🤖 **Discord bot**: `!status`, `!room <name>`, `!usage`, `!alerts`, `!help` — plus
   **proactive alert posts** to a channel (30 s poll, deduped by stable alert IDs)
@@ -127,18 +132,21 @@ The backend owns everything.
 │       │   ├── deviceService.js   # the one place that mutates device state / mode
 │       │   ├── usageService.js    # totals, per-room W, estimated kWh
 │       │   ├── alertService.js    # after-hours + long-running rules
-│       │   └── roomService.js     # room summaries/details
-│       ├── routes/                # health, devices, rooms, usage, alerts, simulation
+│       │   ├── roomService.js     # room summaries/details
+│       │   └── clockService.js    # the one virtual "office clock" all time derives from
+│       ├── routes/                # health, devices, rooms, usage, alerts, simulation, clock
 │       └── utils/roomAliases.js   # "work1" → "Work Room 1"
 ├── dashboard/
-│   ├── public/models/            # GLB room assets (room-iso.glb + props)
 │   └── src/
 │       ├── App.jsx                # state + REST bootstrap + socket wiring + control actions
 │       ├── api.js · socket.js     # backend clients (reads + control PATCHes)
-│       ├── components/            # shell, header, ControlBar, Three.js scene (OfficeScene3D +
-│       │                          # Room3D + scene3d.config), DevicePanel cards, DeviceIcon
-│       │                          # (SVG fan/light), ToggleSwitch, meter, tooltip, alerts
-│       └── styles/app.css         # glassmorphism panels + scene overlays + control styles
+│       ├── officeClock.js         # frontend mirror of the backend office clock
+│       ├── tooltipStore.js        # external store for the hover tooltip (isolates re-renders)
+│       ├── components/            # shell, header, ControlBar, TimeControl, Three.js scene
+│       │                          # (OfficeLayout + Room3D + RoomFurniture + roomConfigs),
+│       │                          # RoomCard, DeviceControls (rocker switch), DeviceIcon,
+│       │                          # PowerMeter, AlertsPanel, DeviceTooltip
+│       └── styles/app.css         # contemporary dark theme, panels, scene overlays, controls
 ├── bot/bot.js                     # all commands + proactive alert poller
 ├── diagrams/                      # system architecture + hardware schematic
 ├── docs/                          # setup, demo script, validation, API, testing
@@ -179,6 +187,7 @@ Portal. All variables are documented in each `\.env.example` and in the setup gu
 | `/api/usage` | total W, devices on, estimated kWh today, per-room breakdown |
 | `/api/alerts` | active alerts with stable IDs |
 | `/api/simulation` | `{ enabled, intervalMs, autoDevices, manualDevices, totalDevices }` |
+| `/api/clock` | `{ officeTime, speed, isRealTime, realTime }` — the virtual office clock |
 
 **Control (PATCH)** — the manual-control surface. Each one re-derives rooms/usage/alerts
 and rebroadcasts over Socket.IO, so every client updates immediately.
@@ -192,12 +201,13 @@ and rebroadcasts over Socket.IO, so every client updates immediately.
 | `/api/devices/all-off` | turn everything off + pin to `manual` |
 | `/api/rooms/:roomName/all-off` | turn one room off + pin to `manual` |
 | `/api/simulation` | `{enabled}` — enable/disable the simulator |
+| `/api/clock` | `{time?, speed?, reset?}` — set the office time/speed, or reset to real time |
 
 Examples with full payloads: [`docs/api-reference.md`](docs/api-reference.md)
 
-**Socket.IO events** (full snapshot on connect, then after every simulator tick **and
-every manual control change**):
-`devices:update` · `rooms:update` · `usage:update` · `alerts:update` · `simulation:update`
+**Socket.IO events** (full snapshot on connect, then after every simulator tick, manual
+control change **and clock change**):
+`devices:update` · `rooms:update` · `usage:update` · `alerts:update` · `simulation:update` · `clock:update`
 
 ## Bot commands
 
@@ -215,16 +225,25 @@ alerts are also posted proactively to `ALERT_CHANNEL_ID` (30 s poll, each alert 
 ## The 3D dashboard, briefly
 
 The scene is a real Three.js canvas (`react-three-fiber` + `drei`) under an orthographic
-isometric camera with `OrbitControls` (drag to orbit). Each of the three rooms loads a
-GLB model (`public/models/room-iso.glb`), auto-normalized to a common footprint so its
-floor sits at `y=0` regardless of the source model's scale. The live devices — two ceiling
-fans and three pendant lamps per room — are **built procedurally in code**, not baked into
-the model: fans rotate via `useFrame` while ON, lamps switch on an emissive material plus a
-real `pointLight`, and each device forwards react-three-fiber pointer events (with
-`clientX/clientY`) to the shared screen-space tooltip. The room models are decorative; every
+isometric camera. `<Bounds fit clip observe>` auto-fits the whole office into view on load
+and on every resize (so nothing clips at any width); `OrbitControls` lets you drag to orbit.
+
+Each room is **fully procedural — no 3D model files.** `roomConfigs.js` describes every
+room (palette, grid position, furniture style, per-device ceiling layout); `Room3D` renders
+a low-poly shell (floor slab, two colored walls, white trim, a door, a night window) and
+`RoomFurniture` adds a small office kit (desks with glowing monitors, chairs, whiteboard,
+bookshelf, filing cabinet — or a lounge sofa/rug/plants). The three rooms tile in a
+honeycomb with the back room **raised one wall-height on a plinth**, so its interior stays
+visible above the two front rooms.
+
+The live devices — two ceiling fans and three pendant lamps per room — are drawn in code
+too: fans spin via `useFrame` while ON, lamps switch on an emissive material plus a real
+`pointLight`. Hovering a device shows the shared screen-space tooltip; a genuine click
+(distinguished from an orbit drag) toggles it via the backend. Hover state lives in
+`tooltipStore.js` so pointer motion re-renders only the tooltip, never the dashboard. Every
 visual state (spin, glow, tooltip, watts) still comes straight from the backend device
-objects, so the scene stays 100% data-driven. Models, per-room rotation and device layout
-are swappable via [`src/components/scene3d.config.js`](dashboard/src/components/scene3d.config.js).
+objects, so the scene stays 100% data-driven — restyle any room in
+[`src/components/roomConfigs.js`](dashboard/src/components/roomConfigs.js).
 
 ## Alert rules
 
@@ -232,6 +251,11 @@ Office hours **9 AM – 5 PM** (configurable via `OFFICE_START_HOUR` / `OFFICE_E
 
 1. **After-hours** (`warning`) — any device ON before 9 AM or at/after 5 PM.
 2. **Long-running room** (`critical`) — all 5 devices of a room ON continuously > 2 h.
+
+Both rules run on the **office clock**, not the wall clock — so the simplest way to demo
+them is the dashboard's time controls: jump to 6 PM for after-hours, or run at 1800× to
+push a room past the 2-hour limit in seconds (the `OFFICE_START_HOUR` / `LONG_RUNNING_HOURS`
+env vars still work too).
 
 Alerts carry `id, type, room, deviceId?, message, timestamp, severity`. IDs encode the
 ON-session start, so they're stable while the condition persists (that's the bot's

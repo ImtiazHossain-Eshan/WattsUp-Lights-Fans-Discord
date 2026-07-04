@@ -35,8 +35,10 @@
 - [x] Alert 1: device ON before 9 AM or ≥ 5 PM → after-hours `warning`
 - [x] Alert 2: all 5 room devices ON > 2 h → long-running `critical`
 - [x] Alert fields: `id, type, room, deviceId (optional), message, timestamp, severity`; stable IDs; no duplicates per cycle
-- [x] Simulator: toggles 1 random device / 5 s; updates status, currentPower, lastChanged, turnedOnAt; recalculates rooms/usage/alerts; emits all 4 socket events; never creates rooms/devices, never touches wattage; runs with zero clients
-- [x] Socket.IO: `devices:update`, `rooms:update`, `usage:update`, `alerts:update` + full snapshot on connect
+- [x] Simulator: toggles 1 random **auto** device / 5 s; updates status, currentPower, lastChanged, turnedOnAt; recalculates rooms/usage/alerts; broadcasts; never creates rooms/devices, never touches wattage; never touches manual devices; runs with zero clients
+- [x] Manual control API: `PATCH /api/devices/:id/toggle|state|mode`, `/reset-auto`, `/all-off`, `/rooms/:room/all-off`, `/api/simulation` — each writes to the backend then rebroadcasts
+- [x] Office clock: `GET`/`PATCH /api/clock` (set time, speed 0–3600×, reset); all timestamps/alerts/kWh derive from it so the whole dashboard tells one consistent time
+- [x] Socket.IO: `devices:update`, `rooms:update`, `usage:update`, `alerts:update`, `simulation:update`, `clock:update` + full snapshot on connect
 
 ## Dashboard
 
@@ -45,12 +47,13 @@
 - [x] Live total power meter + estimated kWh
 - [x] Per-room power breakdown bars
 - [x] Active alerts panel with severity styles + friendly empty state
-- [x] Visual office layout: lights glow, fans spin — rendered with Three.js (react-three-fiber + drei) loading real GLB room models, no Mermaid
-- [x] Cozy isometric scene: 3 rooms in a row (GLB models under an orthographic iso camera, drag-to-orbit), warm lighting, dark burgundy background, soft contact shadows
-- [x] Glassmorphism floating panels, smooth animations, responsive layout
-- [x] Drawing Room: furnished GLB room model + 2 fans + 3 lights (fans/lights data-driven; per-room model swappable in `scene3d.config.js`)
-- [x] Work Rooms: furnished GLB room model + 2 fans + 3 lights each (fans/lights data-driven; per-room model swappable in `scene3d.config.js`)
-- [x] Hover tooltip on every device: name, room, status, current power, last changed
+- [x] Visual office layout: lights glow, fans spin — rendered with Three.js (react-three-fiber + drei), fully procedural (no model files), no Mermaid
+- [x] Isometric honeycomb scene: 3 rooms tiled edge-to-edge (back room raised on a plinth), orthographic iso camera, `<Bounds>` auto-fit (no clipping at any width), drag-to-orbit, soft contact shadows
+- [x] Contemporary dark theme, glass panels, animated clock, responsive layout
+- [x] Drawing Room = lounge (sofa/rug/plants); Work Rooms = workspaces (desks, monitors, whiteboard, bookshelf, cabinet) — each + 2 fans + 3 lights, all data-driven; restyle in `roomConfigs.js`
+- [x] Physical rocker wall-switch per device (click a scene device or its switch to toggle) + Auto/Manual mode control
+- [x] Office clock control: live 24h dial + readout, speed (1×–1800×), jump presets / custom time, reset to real time
+- [x] Hover tooltip on every device: name, room, status, current power, mode, last changed (office-clock time)
 - [x] Connection status indicator; graceful offline banner + auto-reconnect
 
 ## Discord bot

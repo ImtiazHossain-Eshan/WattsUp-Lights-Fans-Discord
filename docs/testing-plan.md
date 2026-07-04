@@ -69,16 +69,20 @@ PowerShell (`curl.exe`) and bash.
 
 ## 7. Alert tests (force alerts on demand)
 
-The rules are time-based, so use the documented env knobs in `backend/.env`:
+The rules run on the **office clock**, so the quickest path is the clock controls (dashboard
+time bar, or `PATCH /api/clock`) — no restart required:
 
-1. **After-hours:** set `OFFICE_START_HOUR=24`, restart backend → every ON device
-   yields a `warning` alert. Check `/api/alerts`, the dashboard alerts panel, `!alerts`,
-   and (within 30 s) the proactive post in the Discord alert channel.
-2. **Long-running room:** set `LONG_RUNNING_HOURS=0.01` (36 s) and optionally
-   `SIMULATION_INTERVAL_MS=2000`, restart → when a room's 5 devices happen to all stay
-   ON for 36 s, a `critical` alert appears (usually within a few minutes).
+1. **After-hours:** jump the clock to `18:00` (`PATCH /api/clock {"time":"18:00"}`) → every
+   ON device yields a `warning` alert. Check `/api/alerts`, the dashboard alerts panel,
+   `!alerts`, and (within 30 s) the proactive post in the Discord alert channel.
+2. **Long-running room:** turn a room's 5 devices ON, then set speed to `1800×`
+   (`PATCH /api/clock {"speed":1800}`) → within seconds the room passes the 2-hour limit and
+   a `critical` alert appears. Reset with `{"reset":true}`.
 3. **No duplicates:** leave the bot running through several polls → each alert is
    posted to the channel exactly once (stable IDs + posted-ID set).
+
+The env knobs still work as a static alternative: `OFFICE_START_HOUR=24` (all-after-hours)
+and `LONG_RUNNING_HOURS=0.01` (~36 s) in `backend/.env`, then restart.
 4. Restore defaults afterwards.
 
 ## 8. Invalid input & resilience

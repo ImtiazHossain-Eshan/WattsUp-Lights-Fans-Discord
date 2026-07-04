@@ -1,5 +1,6 @@
 import DeviceIcon from "./DeviceIcon.jsx";
 import { formatOfficeTime, relOfficeTime } from "../officeClock.js";
+import { useTooltip } from "../tooltipStore.js";
 
 // Office-clock timestamp: absolute + relative, consistent with every panel.
 function formatTime(iso) {
@@ -9,9 +10,11 @@ function formatTime(iso) {
 
 /**
  * Screen-space hover card. Rendered outside the 3D transforms so the text is
- * always crisp; follows the cursor and clamps to the viewport.
+ * always crisp; follows the cursor and clamps to the viewport. Reads hover
+ * state from tooltipStore so pointer motion never re-renders the dashboard.
  */
-export default function DeviceTooltip({ tooltip }) {
+export default function DeviceTooltip() {
+  const tooltip = useTooltip();
   if (!tooltip?.device) return null;
   const { device, x, y } = tooltip;
   const on = device.status === "on";

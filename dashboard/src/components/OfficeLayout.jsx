@@ -3,7 +3,7 @@ import {
   OrbitControls,
   OrthographicCamera,
   ContactShadows,
-  Center,
+  Bounds,
 } from "@react-three/drei";
 import Room3D from "./Room3D.jsx";
 import { ROOM_ORDER, roomConfigs } from "./roomConfigs.js";
@@ -30,11 +30,12 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
         style={{ position: "absolute", inset: 0 }}
         onPointerMissed={clearTooltip}
       >
-        {/* steep-ish iso view so interiors stay visible over the front walls */}
+        {/* classic game-iso angle (shallower than top-down so the walls and
+            interiors read); Bounds computes the actual zoom to fit */}
         <OrthographicCamera
           makeDefault
-          position={[8, 14, 8]}
-          zoom={64}
+          position={[10, 9, 10]}
+          zoom={52}
           near={0.1}
           far={100}
         />
@@ -48,9 +49,10 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
           shadow-mapSize={[1024, 1024]}
         />
 
-        {/* Center X/Z so the honeycomb always sits dead-center regardless of
-            viewport width (keeps Y — the raised back room stays elevated). */}
-        <Center disableY>
+        {/* Fit the WHOLE honeycomb into view on load and on every resize, so the
+            raised back room never gets clipped at the top (and it stays centered
+            at any viewport width). `margin` leaves breathing room around it. */}
+        <Bounds fit clip observe margin={1.02} maxDuration={0}>
           {ROOM_ORDER.map((name) => (
             <Room3D
               key={name}
@@ -62,7 +64,7 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
               onDeviceToggle={onDeviceToggle}
             />
           ))}
-        </Center>
+        </Bounds>
 
         <ContactShadows
           position={[0, -0.17, 0]}
@@ -74,12 +76,11 @@ export default function OfficeLayout({ devices, busy, onDeviceHover, onDeviceTog
 
         <OrbitControls
           makeDefault
-          target={[0, 2.7, 0]}
           enablePan={false}
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2.4}
-          minZoom={28}
-          maxZoom={110}
+          minZoom={20}
+          maxZoom={160}
         />
       </Canvas>
 
