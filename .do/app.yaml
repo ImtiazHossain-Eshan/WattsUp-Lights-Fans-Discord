@@ -1,0 +1,87 @@
+# DigitalOcean App Platform spec for WattsUp — one app, one domain:
+#   "/"     → dashboard (static React/Vite build)
+#   "/api"  → backend  (Express REST + Socket.IO at /api/socket.io)
+#   worker  → Discord bot (no inbound HTTP; reads the backend)
+#
+# Because the dashboard and API share one origin, there is NO CORS to configure
+# and the frontend needs no backend URL — it just calls "/api" relatively.
+#
+# Deploy:  doctl apps create --spec .do/app.yaml
+#   (or App Platform UI → Create App → your repo → it picks up this file)
+# Spec ref: https://docs.digitalocean.com/products/app-platform/reference/app-spec/
+name: wattsup
+region: sgp # Singapore — closest App Platform region to Bangladesh; change if you like
+
+services:
+  # ---- Backend: source of truth. Persistent process, holds live WebSocket
+  #      connections + the 5s simulator + the office clock. ----
+  - name: backend
+    github:
+      repo: ImtiazHossain-Eshan/WattsUp-Lights-Fans-Discord
+      branch: main # <-- set to the branch you push production code to
+      deploy_on_push: true
+    source_dir: backend
+    environment_slug: node-js
+    build_command: npm ci
+    run_command: npm start
+    http_port: 8080 # App Platform sets PORT=8080; server.js reads process.env.PORT
+    instance_size_slug: basic-xxs # ~$5/mo, 512MB (smallest)
+    instance_count: 1
+    health_check:
+      http_path: /api/health
+    routes:
+      - path: /api # REST at /api/*, Socket.IO at /api/socket.io
+    envs:
+      - key: NODE_ENV
+        scope: RUN_AND_BUILD_TIME
+        value: production
+      # Same origin as the dashboard, so "*" is harmless. Lock to your domain
+      # only if you later host the frontend somewhere else.
+      - key: CLIENT_URL
+        scope: RUN_TIME
+        value: "*"
+
+static_sites:
+  # ---- Dashboard: React/Vite → static files served at "/" ----
+  - name: dashboard
+    github:
+      repo: ImtiazHossain-Eshan/WattsUp-Lights-Fans-Discord
+      branch: main
+      deploy_on_push: true
+    source_dir: dashboard
+    build_command: npm ci && npm run build
+    output_dir: dist
+    catchall_document: index.html
+    routes:
+      - path: /
+    # No VITE_BACKEND_URL: production build talks to "/api" on the same origin.
+
+workers:
+  # ---- Discord bot: always-on, reads the backend over the private network ----
+  - name: bot
+    github:
+      repo: ImtiazHossain-Eshan/WattsUp-Lights-Fans-Discord
+      branch: main
+      deploy_on_push: true
+    source_dir: bot
+    environment_slug: node-js
+    build_command: npm ci
+    run_command: npm start
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    envs:
+      # Internal URL of the backend service (no public round-trip). The bot
+      # requests `${BACKEND_URL}/api/...`.
+      - key: BACKEND_URL
+        scope: RUN_TIME
+        value: ${backend.PRIVATE_URL}
+      # Set these two as ENCRYPTED env vars in the App Platform UI (do NOT commit
+      # a real token). Without ALERT_CHANNEL_ID, commands still work; only the
+      # proactive alert posts are disabled.
+      - key: DISCORD_TOKEN
+        scope: RUN_TIME
+        type: SECRET
+        value: "REPLACE_IN_APP_PLATFORM_UI"
+      - key: ALERT_CHANNEL_ID
+        scope: RUN_TIME
+        value: ""
